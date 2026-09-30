@@ -50,118 +50,118 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   };
 
   return (
-    <div className="space-y-6">
-      {/* Top Tenant Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-slate-200">
+    <div className="space-y-5">
+      {/* Top Organization Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#E5E1D8]">
         <div>
           <div className="flex items-center space-x-2.5">
-            <h1 className="text-xl font-bold text-slate-900 tracking-tight">
-              {currentTenant?.name || 'Loading Tenant...'}
+            <h1 className="text-xl font-bold text-[#172033] tracking-tight">
+              {currentTenant?.name || 'Loading Organization...'}
             </h1>
-            <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">
+            <span className="text-[11px] font-mono px-2 py-0.5 rounded-[4px] bg-[#FBFAF7] text-[#667085] border border-[#E5E1D8]">
               {currentTenant?.id}
             </span>
           </div>
-          <p className="text-xs text-slate-500 mt-1 max-w-2xl">
-            {currentTenant?.description || 'Tenant stock catalog and real-time inventory telemetry.'}
+          <p className="text-xs text-[#667085] mt-1 max-w-2xl">
+            {currentTenant?.description || 'Real-time multi-tenant inventory telemetry and stock levels.'}
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2">
           <button
             onClick={onOpenAddModal}
-            className="px-3.5 py-1.5 rounded-md bg-slate-900 hover:bg-slate-800 text-white font-medium text-xs transition flex items-center space-x-1.5 shadow-sm"
+            className="px-3.5 py-1.5 rounded-[7px] bg-[#3157D5] hover:bg-[#2648BE] text-white font-medium text-xs transition flex items-center space-x-1.5 shadow-xs"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Add Product</span>
           </button>
           <button
             onClick={onNavigateToInventory}
-            className="px-3 py-1.5 rounded-md bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 font-medium text-xs transition flex items-center space-x-1.5 shadow-sm"
+            className="px-3.5 py-1.5 rounded-[7px] bg-white hover:bg-[#FBFAF7] text-[#172033] border border-[#E5E1D8] font-medium text-xs transition flex items-center space-x-1.5"
           >
             <span>Catalog</span>
-            <ArrowUpRight className="w-3.5 h-3.5 text-slate-400" />
+            <ArrowUpRight className="w-3.5 h-3.5 text-[#667085]" />
           </button>
         </div>
       </div>
 
-      {/* 5 Clean Stat Cards */}
+      {/* 5 KPI Metric Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3.5">
-        {/* Total Products */}
-        <div className="rounded-lg bg-white border border-slate-200 p-4 shadow-sm">
-          <div className="text-[11px] font-mono uppercase tracking-wider text-slate-500 font-medium">Total SKUs</div>
-          <div className="text-2xl font-bold text-slate-900 mt-1 font-mono tracking-tight">
+        {/* Total SKUs */}
+        <div className="rounded-[9px] bg-white border border-[#E5E1D8] p-4 shadow-xs">
+          <div className="text-[11px] font-mono uppercase tracking-wider text-[#667085] font-medium">Total SKUs</div>
+          <div className="text-2xl font-bold text-[#172033] mt-1 font-mono tracking-tight">
             {stats?.totalProducts ?? items.length}
           </div>
-          <div className="mt-1 text-[11px] text-slate-400">Across catalog</div>
+          <div className="mt-1 text-[11px] text-[#98A2B3]">Across catalog</div>
         </div>
 
-        {/* Total Stock */}
-        <div className="rounded-lg bg-white border border-slate-200 p-4 shadow-sm">
-          <div className="text-[11px] font-mono uppercase tracking-wider text-slate-500 font-medium">Stock Units</div>
-          <div className="text-2xl font-bold text-slate-900 mt-1 font-mono tracking-tight">
+        {/* Stock Units */}
+        <div className="rounded-[9px] bg-white border border-[#E5E1D8] p-4 shadow-xs">
+          <div className="text-[11px] font-mono uppercase tracking-wider text-[#667085] font-medium">Stock Units</div>
+          <div className="text-2xl font-bold text-[#172033] mt-1 font-mono tracking-tight">
             {totalStockUnits.toLocaleString()}
           </div>
-          <div className="mt-1 text-[11px] text-slate-400">{categoryStats.length} active categories</div>
+          <div className="mt-1 text-[11px] text-[#98A2B3]">{categoryStats.length} active categories</div>
         </div>
 
         {/* Valuation */}
-        <div className="rounded-lg bg-white border border-slate-200 p-4 shadow-sm">
-          <div className="text-[11px] font-mono uppercase tracking-wider text-slate-500 font-medium">Valuation</div>
-          <div className="text-2xl font-bold text-slate-900 mt-1 font-mono tracking-tight">
+        <div className="rounded-[9px] bg-white border border-[#E5E1D8] p-4 shadow-xs">
+          <div className="text-[11px] font-mono uppercase tracking-wider text-[#667085] font-medium">Valuation</div>
+          <div className="text-2xl font-bold text-[#172033] mt-1 font-mono tracking-tight">
             {formatCurrency(totalValuation)}
           </div>
-          <div className="mt-1 text-[11px] text-slate-400">Total asset value</div>
+          <div className="mt-1 text-[11px] text-[#98A2B3]">Total inventory value</div>
         </div>
 
         {/* Low Stock */}
-        <div className="rounded-lg bg-white border border-slate-200 p-4 shadow-sm">
-          <div className="text-[11px] font-mono uppercase tracking-wider text-slate-500 font-medium">Low Stock</div>
-          <div className="text-2xl font-bold text-slate-900 mt-1 font-mono tracking-tight flex items-center gap-2">
+        <div className="rounded-[9px] bg-white border border-[#E5E1D8] p-4 shadow-xs">
+          <div className="text-[11px] font-mono uppercase tracking-wider text-[#667085] font-medium">Low Stock</div>
+          <div className="text-2xl font-bold text-[#C77B16] mt-1 font-mono tracking-tight flex items-center gap-2">
             <span>{stats?.lowStockCount ?? lowStockItems.length}</span>
             {(stats?.lowStockCount ?? lowStockItems.length) > 0 && (
-              <span className="w-2 h-2 rounded-full bg-amber-500" />
+              <span className="w-2 h-2 rounded-full bg-[#FFB547]" />
             )}
           </div>
-          <div className="mt-1 text-[11px] text-slate-400">At/below threshold</div>
+          <div className="mt-1 text-[11px] text-[#98A2B3]">Needs attention</div>
         </div>
 
         {/* Out of Stock */}
-        <div className="rounded-lg bg-white border border-slate-200 p-4 shadow-sm col-span-2 lg:col-span-1">
-          <div className="text-[11px] font-mono uppercase tracking-wider text-slate-500 font-medium">Out of Stock</div>
-          <div className="text-2xl font-bold text-slate-900 mt-1 font-mono tracking-tight flex items-center gap-2">
+        <div className="rounded-[9px] bg-white border border-[#E5E1D8] p-4 shadow-xs col-span-2 lg:col-span-1">
+          <div className="text-[11px] font-mono uppercase tracking-wider text-[#667085] font-medium">Out of Stock</div>
+          <div className="text-2xl font-bold text-[#D64545] mt-1 font-mono tracking-tight flex items-center gap-2">
             <span>{stats?.outOfStockCount ?? outOfStockItems.length}</span>
             {(stats?.outOfStockCount ?? outOfStockItems.length) > 0 && (
-              <span className="w-2 h-2 rounded-full bg-rose-500" />
+              <span className="w-2 h-2 rounded-full bg-[#D64545]" />
             )}
           </div>
-          <div className="mt-1 text-[11px] text-slate-400">0 units remaining</div>
+          <div className="mt-1 text-[11px] text-[#98A2B3]">0 units remaining</div>
         </div>
       </div>
 
       {/* Middle Section: Category Breakdown & Watchlist */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Category Breakdown */}
-        <div className="lg:col-span-1 rounded-lg bg-white border border-slate-200 p-5 shadow-sm">
-          <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
-            <h3 className="text-xs font-semibold text-slate-800 uppercase font-mono tracking-wider">
+        <div className="lg:col-span-1 rounded-[9px] bg-white border border-[#E5E1D8] p-4 shadow-xs">
+          <div className="flex items-center justify-between mb-3.5 border-b border-[#EEEAE3] pb-2.5">
+            <h3 className="text-xs font-semibold text-[#172033] uppercase font-mono tracking-wider">
               Category Distribution
             </h3>
-            <span className="text-[11px] text-slate-500 font-medium">{categoryStats.length} Total</span>
+            <span className="text-[11px] text-[#667085] font-medium">{categoryStats.length} Total</span>
           </div>
 
-          <div className="space-y-3.5">
+          <div className="space-y-3">
             {categoryStats.map((cat) => {
               const pct = totalStockUnits > 0 ? Math.round((cat.totalQty / totalStockUnits) * 100) : 0;
               return (
-                <div key={cat.name} className="space-y-1.5">
+                <div key={cat.name} className="space-y-1">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-slate-700 font-medium">{cat.name}</span>
-                    <span className="text-slate-500 font-mono text-[11px]">{cat.totalQty} ({pct}%)</span>
+                    <span className="text-[#172033] font-medium">{cat.name}</span>
+                    <span className="text-[#667085] font-mono text-[11px]">{cat.totalQty} ({pct}%)</span>
                   </div>
-                  <div className="w-full h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                  <div className="w-full h-1.5 rounded-full bg-[#F7F5F0] overflow-hidden">
                     <div
-                      className="h-full bg-slate-700 rounded-full"
+                      className="h-full bg-[#3157D5] rounded-full"
                       style={{ width: `${pct}%` }}
                     />
                   </div>
@@ -169,59 +169,59 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               );
             })}
             {categoryStats.length === 0 && (
-              <div className="text-center py-6 text-xs text-slate-400">No items available.</div>
+              <div className="text-center py-6 text-xs text-[#98A2B3]">No items available.</div>
             )}
           </div>
         </div>
 
         {/* Stock Watchlist Table */}
-        <div className="lg:col-span-2 rounded-lg bg-white border border-slate-200 p-5 shadow-sm">
-          <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
+        <div className="lg:col-span-2 rounded-[9px] bg-white border border-[#E5E1D8] p-4 shadow-xs">
+          <div className="flex items-center justify-between mb-3.5 border-b border-[#EEEAE3] pb-2.5">
             <div className="flex items-center space-x-2">
-              <h3 className="text-xs font-semibold text-slate-800 uppercase font-mono tracking-wider">
+              <h3 className="text-xs font-semibold text-[#172033] uppercase font-mono tracking-wider">
                 Attention Watchlist
               </h3>
-              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">
+              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-[4px] bg-[#FFF3DC] text-[#C77B16] border border-[#FDE4B3] font-medium">
                 {lowStockItems.length + outOfStockItems.length}
               </span>
             </div>
             <button
               onClick={onNavigateToInventory}
-              className="text-xs text-slate-500 hover:text-slate-900 transition font-medium"
+              className="text-xs text-[#3157D5] hover:text-[#2648BE] transition font-medium"
             >
-              View all →
+              View catalog →
             </button>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="text-slate-400 border-b border-slate-100 font-mono text-[10px] uppercase">
+              <thead className="text-[#667085] border-b border-[#EEEAE3] font-mono text-[10px] uppercase bg-[#FBFAF7]">
                 <tr>
-                  <th className="pb-2.5 font-medium">Product</th>
-                  <th className="pb-2.5 font-medium">SKU</th>
-                  <th className="pb-2.5 font-medium">Category</th>
-                  <th className="pb-2.5 font-medium">Qty</th>
-                  <th className="pb-2.5 font-medium">Min</th>
-                  <th className="pb-2.5 font-medium">Status</th>
+                  <th className="py-2 px-2.5 font-medium">Product</th>
+                  <th className="py-2 px-2.5 font-medium">SKU</th>
+                  <th className="py-2 px-2.5 font-medium">Category</th>
+                  <th className="py-2 px-2.5 font-medium">Qty</th>
+                  <th className="py-2 px-2.5 font-medium">Min</th>
+                  <th className="py-2 px-2.5 font-medium">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 font-mono">
+              <tbody className="divide-y divide-[#EEEAE3] font-mono">
                 {[...outOfStockItems, ...lowStockItems].slice(0, 5).map((item) => (
-                  <tr key={item.id} className="hover:bg-slate-50 transition">
-                    <td className="py-2.5 text-slate-900 font-sans font-medium">{item.name}</td>
-                    <td className="py-2.5 text-slate-600 text-[11px]">{item.sku}</td>
-                    <td className="py-2.5 text-slate-600 text-[11px] font-sans">{item.category}</td>
-                    <td className="py-2.5 font-bold text-slate-900">{item.quantity}</td>
-                    <td className="py-2.5 text-slate-400">{item.lowStockThreshold}</td>
-                    <td className="py-2.5">
+                  <tr key={item.id} className="hover:bg-[#FBFAF7] transition">
+                    <td className="py-2.5 px-2.5 text-[#172033] font-sans font-medium">{item.name}</td>
+                    <td className="py-2.5 px-2.5 text-[#667085] text-[11px]">{item.sku}</td>
+                    <td className="py-2.5 px-2.5 text-[#667085] text-[11px] font-sans">{item.category}</td>
+                    <td className="py-2.5 px-2.5 font-bold text-[#172033]">{item.quantity}</td>
+                    <td className="py-2.5 px-2.5 text-[#98A2B3]">{item.lowStockThreshold}</td>
+                    <td className="py-2.5 px-2.5">
                       {item.quantity === 0 ? (
-                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium bg-rose-50 text-rose-700 border border-rose-200 font-sans">
-                          <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[4px] text-[10px] font-medium bg-[#FDECEC] text-[#D64545] border border-[#FAD1D1] font-sans">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#D64545]" />
                           <span>Out of Stock</span>
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-50 text-amber-700 border border-amber-200 font-sans">
-                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-[4px] text-[10px] font-medium bg-[#FFF3DC] text-[#C77B16] border border-[#FDE4B3] font-sans">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#FFB547]" />
                           <span>Low Stock</span>
                         </span>
                       )}
@@ -230,7 +230,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 ))}
                 {lowStockItems.length === 0 && outOfStockItems.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="text-center py-6 text-slate-400 font-sans">
+                    <td colSpan={6} className="text-center py-6 text-[#98A2B3] font-sans">
                       All inventory is within normal threshold limits.
                     </td>
                   </tr>
@@ -242,32 +242,32 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       </div>
 
       {/* Recent Activity */}
-      <div className="rounded-lg bg-white border border-slate-200 p-5 shadow-sm">
-        <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
-          <h3 className="text-xs font-semibold text-slate-800 uppercase font-mono tracking-wider">
+      <div className="rounded-[9px] bg-white border border-[#E5E1D8] p-4 shadow-xs">
+        <div className="flex items-center justify-between mb-3 border-b border-[#EEEAE3] pb-2.5">
+          <h3 className="text-xs font-semibold text-[#172033] uppercase font-mono tracking-wider">
             Recent Stock Activity
           </h3>
-          <span className="text-[11px] text-slate-400 font-mono">tenant: {currentTenant?.id}</span>
+          <span className="text-[11px] text-[#98A2B3] font-mono">tenant: {currentTenant?.id}</span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
           {transactions.slice(0, 4).map((tx) => (
-            <div key={tx.id} className="p-3 rounded-md bg-slate-50 border border-slate-200 text-xs">
+            <div key={tx.id} className="p-3 rounded-[7px] bg-[#FBFAF7] border border-[#E5E1D8] text-xs">
               <div className="flex items-center justify-between mb-1">
-                <span className="text-[10px] font-mono uppercase font-semibold text-slate-700">
+                <span className="text-[10px] font-mono uppercase font-semibold text-[#3157D5]">
                   {tx.type} ({tx.quantity > 0 ? `+${tx.quantity}` : tx.quantity})
                 </span>
-                <span className="text-[10px] text-slate-400 font-mono">
+                <span className="text-[10px] text-[#98A2B3] font-mono">
                   {new Date(tx.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>
               </div>
-              <div className="font-medium text-slate-900 truncate">{tx.productName || 'Item'}</div>
-              <div className="text-[11px] text-slate-500 truncate mt-0.5">{tx.note || 'Adjustment'}</div>
+              <div className="font-medium text-[#172033] truncate">{tx.productName || 'Item'}</div>
+              <div className="text-[11px] text-[#667085] truncate mt-0.5">{tx.note || 'Adjustment'}</div>
             </div>
           ))}
           {transactions.length === 0 && (
-            <div className="col-span-4 text-center py-6 text-xs text-slate-400">
-              No recent activity recorded for this tenant.
+            <div className="col-span-4 text-center py-6 text-xs text-[#98A2B3]">
+              No recent activity recorded for this organization.
             </div>
           )}
         </div>

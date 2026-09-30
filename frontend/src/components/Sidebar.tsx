@@ -23,7 +23,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   tenantName,
   tenantId,
 }) => {
-  const navItems: { id: TabType; label: string; icon: React.ReactNode; badge?: string }[] = [
+  const workspaceItems: { id: TabType; label: string; icon: React.ReactNode; badge?: string }[] = [
     {
       id: 'dashboard',
       label: 'Overview',
@@ -31,15 +31,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
     {
       id: 'inventory',
-      label: 'Inventory Catalog',
+      label: 'Inventory',
       icon: <Package className="w-4 h-4" />,
     },
     {
       id: 'files',
-      label: 'Files & Storage',
+      label: 'Storage & Files',
       icon: <FolderLock className="w-4 h-4" />,
       badge: 'S3',
     },
+  ];
+
+  const adminItems: { id: TabType; label: string; icon: React.ReactNode; badge?: string }[] = [
     {
       id: 'audit',
       label: 'Audit Trail',
@@ -59,57 +62,110 @@ export const Sidebar: React.FC<SidebarProps> = ({
   ];
 
   return (
-    <aside className="w-60 bg-white border-r border-slate-200 flex flex-col shrink-0 min-h-[calc(100vh-3.5rem)]">
-      {/* Active Tenant Context Card */}
-      <div className="p-4 border-b border-slate-100 bg-slate-50/60">
-        <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-medium">
-          Active Tenant Context
+    <aside className="w-60 bg-white border-r border-[#E5E1D8] flex flex-col shrink-0 min-h-[calc(100vh-3.5rem)]">
+      {/* Active Organization Context Box */}
+      <div className="p-3.5 mx-3 mt-3 rounded-[7px] bg-[#FBFAF7] border border-[#E5E1D8]">
+        <div className="text-[10px] font-mono uppercase tracking-wider text-[#98A2B3] font-medium">
+          Active Workspace
         </div>
-        <div className="font-semibold text-xs text-slate-900 mt-1 truncate">
-          {tenantName || 'No Context'}
+        <div className="font-semibold text-xs text-[#172033] mt-0.5 truncate">
+          {tenantName || 'No Organization'}
         </div>
-        <div className="mt-1.5 text-[11px] font-mono text-slate-600 bg-white px-2 py-0.5 rounded border border-slate-200 truncate">
+        <div className="mt-1 text-[11px] font-mono text-[#667085] bg-white px-2 py-0.5 rounded-[4px] border border-[#EEEAE3] truncate">
           {tenantId || 'none'}
         </div>
       </div>
 
-      {/* Navigation Links */}
-      <nav className="p-3 space-y-1 flex-1">
-        {navItems.map((item) => {
-          const isActive = currentTab === item.id;
-          return (
-            <button
-              key={item.id}
-              onClick={() => onTabChange(item.id)}
-              className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-xs font-medium transition ${
-                isActive
-                  ? 'bg-slate-100 text-slate-900 font-semibold'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-              }`}
-            >
-              <div className="flex items-center space-x-2.5">
-                <span className={isActive ? 'text-slate-900' : 'text-slate-400'}>
-                  {item.icon}
-                </span>
-                <span>{item.label}</span>
-              </div>
-              {item.badge && (
-                <span className="text-[9px] font-mono px-1.5 py-0.2 rounded uppercase bg-white text-slate-600 border border-slate-200">
-                  {item.badge}
-                </span>
-              )}
-            </button>
-          );
-        })}
+      {/* Navigation Links Grouped */}
+      <nav className="p-3 space-y-4 flex-1">
+        {/* Workspace Section */}
+        <div>
+          <div className="px-2.5 mb-1.5 text-[10px] font-mono uppercase tracking-wider text-[#98A2B3] font-semibold">
+            Workspace
+          </div>
+          <div className="space-y-0.5">
+            {workspaceItems.map((item) => {
+              const isActive = currentTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => onTabChange(item.id)}
+                  className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-[7px] text-xs font-medium transition ${
+                    isActive
+                      ? 'bg-[#E9EEFF] text-[#3157D5] font-semibold'
+                      : 'text-[#667085] hover:text-[#172033] hover:bg-[#FBFAF7]'
+                  }`}
+                >
+                  <div className="flex items-center space-x-2.5">
+                    <span className={isActive ? 'text-[#3157D5]' : 'text-[#667085]'}>
+                      {item.icon}
+                    </span>
+                    <span>{item.label}</span>
+                  </div>
+                  {item.badge && (
+                    <span className={`text-[9px] font-mono px-1.5 py-0.2 rounded-[4px] uppercase font-semibold ${
+                      isActive
+                        ? 'bg-white text-[#3157D5] border border-[#C7D7FE]'
+                        : 'bg-[#FBFAF7] text-[#667085] border border-[#E5E1D8]'
+                    }`}>
+                      {item.badge}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Administration & Security Section */}
+        <div>
+          <div className="px-2.5 mb-1.5 text-[10px] font-mono uppercase tracking-wider text-[#98A2B3] font-semibold">
+            Security & System
+          </div>
+          <div className="space-y-0.5">
+            {adminItems.map((item) => {
+              const isActive = currentTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => onTabChange(item.id)}
+                  className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-[7px] text-xs font-medium transition ${
+                    isActive
+                      ? 'bg-[#E9EEFF] text-[#3157D5] font-semibold'
+                      : 'text-[#667085] hover:text-[#172033] hover:bg-[#FBFAF7]'
+                  }`}
+                >
+                  <div className="flex items-center space-x-2.5">
+                    <span className={isActive ? 'text-[#3157D5]' : 'text-[#667085]'}>
+                      {item.icon}
+                    </span>
+                    <span>{item.label}</span>
+                  </div>
+                  {item.badge && (
+                    <span className={`text-[9px] font-mono px-1.5 py-0.2 rounded-[4px] uppercase font-semibold ${
+                      isActive
+                        ? 'bg-white text-[#3157D5] border border-[#C7D7FE]'
+                        : 'bg-[#FBFAF7] text-[#667085] border border-[#E5E1D8]'
+                    }`}>
+                      {item.badge}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </nav>
 
       {/* Security Statement Footer */}
-      <div className="p-3 m-3 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-600 leading-normal">
-        <div className="flex items-center space-x-1.5 font-mono text-[10px] text-emerald-700 font-semibold uppercase tracking-wider mb-1">
-          <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+      <div className="p-3 m-3 rounded-[7px] bg-[#E8F6EF] border border-[#C8EBD9] text-xs text-[#238B5A] leading-normal">
+        <div className="flex items-center space-x-1.5 font-mono text-[10px] font-bold uppercase tracking-wider mb-0.5">
+          <ShieldCheck className="w-3.5 h-3.5 text-[#238B5A]" />
           <span>Global Filter Active</span>
         </div>
-        EF Core Query Filters enforce <code className="text-slate-800 font-mono font-medium">TenantId</code> on every database query.
+        <p className="text-[11px] text-[#238B5A]/90">
+          EF Core Query Filters enforce <code className="font-mono font-bold text-[#1e6b47]">TenantId</code> per query.
+        </p>
       </div>
     </aside>
   );

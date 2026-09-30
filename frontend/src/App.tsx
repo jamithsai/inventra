@@ -298,7 +298,7 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col selection:bg-slate-200 selection:text-slate-900">
+    <div className="min-h-screen bg-[#F7F5F0] text-[#172033] flex flex-col selection:bg-[#E9EEFF] selection:text-[#3157D5]">
       {/* Top Navigation Bar */}
       <Navbar
         currentTenant={currentTenant}
@@ -401,16 +401,16 @@ export const App: React.FC = () => {
       {/* Floating Toast Notification */}
       {toast && (
         <div
-          className="fixed bottom-5 right-5 z-50 px-4 py-3 rounded-lg shadow-lg flex items-center space-x-3 text-xs font-medium border bg-white border-slate-200 text-slate-800 animate-in slide-in-from-bottom-5 duration-150"
+          className="fixed bottom-5 right-5 z-50 px-4 py-2.5 rounded-[7px] shadow-[0_4px_16px_rgba(23,32,51,0.08)] flex items-center space-x-3 text-xs font-medium border bg-white border-[#E5E1D8] text-[#172033] animate-in slide-in-from-bottom-3 duration-150"
         >
           {toast.type === 'success' ? (
-            <div className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+            <div className="w-2 h-2 rounded-full bg-[#238B5A] shrink-0" />
           ) : toast.type === 'error' ? (
-            <div className="w-2 h-2 rounded-full bg-rose-500 shrink-0" />
+            <div className="w-2 h-2 rounded-full bg-[#D64545] shrink-0" />
           ) : (
-            <div className="w-2 h-2 rounded-full bg-slate-500 shrink-0" />
+            <div className="w-2 h-2 rounded-full bg-[#3157D5] shrink-0" />
           )}
-          <span className="font-mono text-slate-700">{toast.message}</span>
+          <span className="text-[#172033] font-medium">{toast.message}</span>
         </div>
       )}
     </div>

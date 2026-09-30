@@ -4,29 +4,54 @@ export default {
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
-  darkMode: 'class',
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Geist', 'Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+        sans: ['Inter', 'Geist', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
         mono: ['JetBrains Mono', 'Geist Mono', 'Menlo', 'Monaco', 'Courier New', 'monospace'],
       },
       colors: {
-        zinc: {
-          950: '#09090b',
-          900: '#121215',
-          850: '#18181b',
-          800: '#27272a',
-          700: '#3f3f46',
-          600: '#52525b',
-          500: '#71717a',
-          400: '#a1a1aa',
-          300: '#d4d4d8',
-          200: '#e4e4e7',
-          100: '#f4f4f5',
-          50: '#fafafa',
+        ivory: {
+          DEFAULT: '#F7F5F0',
+          canvas: '#F7F5F0',
+          surface: '#FBFAF7',
+          border: '#E5E1D8',
+          'border-light': '#EEEAE3',
+        },
+        ink: {
+          DEFAULT: '#172033',
+          primary: '#172033',
+          secondary: '#667085',
+          muted: '#98A2B3',
+        },
+        cobalt: {
+          DEFAULT: '#3157D5',
+          hover: '#2648BE',
+          soft: '#E9EEFF',
+          dark: '#1D3B99',
+        },
+        amber: {
+          DEFAULT: '#FFB547',
+          warning: '#C77B16',
+          soft: '#FFF4DE',
+          'warning-soft': '#FFF3DC',
+        },
+        status: {
+          success: '#238B5A',
+          'success-bg': '#E8F6EF',
+          'success-border': '#C8EBD9',
+          warning: '#C77B16',
+          'warning-bg': '#FFF3DC',
+          'warning-border': '#FDE4B3',
+          danger: '#D64545',
+          'danger-bg': '#FDECEC',
+          'danger-border': '#FAD1D1',
         }
       },
+      borderRadius: {
+        'enterprise': '7px',
+        'card': '9px',
+      }
     },
   },
   plugins: [],
