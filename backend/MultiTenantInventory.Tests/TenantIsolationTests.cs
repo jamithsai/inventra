@@ -1,13 +1,17 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using FluentAssertions;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using MultiTenantInventory.Api.Data;
 using MultiTenantInventory.Api.DTOs;
 using MultiTenantInventory.Api.Models;
+using MultiTenantInventory.Api.Tenant;
 using Xunit;
 
 namespace MultiTenantInventory.Tests;
@@ -23,11 +27,14 @@ public class TenantIsolationTests : IClassFixture<WebApplicationFactory<Program>
         _jsonOptions = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
     }
 
-    private HttpClient CreateClientWithTenant(string tenantId, string userId = "usr_admin_1")
+    private HttpClient CreateClientWithTenant(string tenantId, string? userId = "usr_admin_1")
     {
         var client = _factory.CreateClient();
         client.DefaultRequestHeaders.Add("X-Tenant-ID", tenantId);
-        client.DefaultRequestHeaders.Add("X-User-ID", userId);
+        if (!string.IsNullOrEmpty(userId))
+        {
+            client.DefaultRequestHeaders.Add("X-User-ID", userId);
+        }
         return client;
     }
 
@@ -171,5 +178,149 @@ public class TenantIsolationTests : IClassFixture<WebApplicationFactory<Program>
         logs.Should().OnlyContain(l => l.TenantId == "nova-electronics");
         logs.Should().NotContain(l => l.TenantId == "acme-retail");
         logs.Should().NotContain(l => l.TenantId == "zenith-supplies");
+    }
+
+    [Fact]
+    public async Task Requirement10_ProductDeletion_CleansUp_AssociatedTenantFiles()
+    {
+        // Arrange: Create a new product in Acme Retail
+        var client = CreateClientWithTenant("acme-retail", "usr_admin_1");
+        var createDto = new CreateInventoryItemDto
+        {
+            Name = "Cascade Test Product",
+            SKU = $"TEST-CASCADE-{Guid.NewGuid():N}"[..12],
+            Category = "Testing",
+            Quantity = 10,
+            Price = 99.99m,
+            LowStockThreshold = 2
+        };
+
+        var prodRes = await client.PostAsJsonAsync("/api/inventory", createDto);
+        prodRes.StatusCode.Should().Be(HttpStatusCode.Created);
+        var createdProd = await prodRes.Content.ReadFromJsonAsync<InventoryItem>(_jsonOptions);
+        createdProd.Should().NotBeNull();
+
+        // Upload a file associated with this product
+        using var form = new MultipartFormDataContent();
+        var fileBytes = System.Text.Encoding.UTF8.GetBytes("Test warranty manual content");
+        var byteContent = new ByteArrayContent(fileBytes);
+        byteContent.Headers.ContentType = MediaTypeHeaderValue.Parse("text/plain");
+        form.Add(byteContent, "file", "warranty_manual.txt");
+        form.Add(new StringContent(createdProd!.Id), "associatedItemId");
+
+        var uploadRes = await client.PostAsync("/api/files/upload", form);
+        uploadRes.StatusCode.Should().Be(HttpStatusCode.Created);
+        var uploadedFile = await uploadRes.Content.ReadFromJsonAsync<TenantFile>(_jsonOptions);
+        uploadedFile.Should().NotBeNull();
+
+        // Verify file exists
+        var checkFile = await client.GetAsync($"/api/files/{uploadedFile!.Id}");
+        checkFile.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        // Act: Delete the product
+        var deleteRes = await client.DeleteAsync($"/api/inventory/{createdProd.Id}");
+        deleteRes.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        // Assert: Product is gone
+        var checkProd = await client.GetAsync($"/api/inventory/{createdProd.Id}");
+        checkProd.StatusCode.Should().Be(HttpStatusCode.NotFound);
+
+        // Assert: Associated TenantFile database record and storage are also cleaned up
+        var checkFileAfter = await client.GetAsync($"/api/files/{uploadedFile.Id}");
+        checkFileAfter.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task Requirement11_ProductDeletion_WithoutFiles_Succeeds()
+    {
+        // Arrange: Create a product with no files
+        var client = CreateClientWithTenant("acme-retail", "usr_admin_1");
+        var createDto = new CreateInventoryItemDto
+        {
+            Name = "No File Product",
+            SKU = $"NO-FILE-{Guid.NewGuid():N}"[..12],
+            Category = "Testing",
+            Quantity = 5,
+            Price = 19.99m,
+            LowStockThreshold = 1
+        };
+
+        var prodRes = await client.PostAsJsonAsync("/api/inventory", createDto);
+        var createdProd = await prodRes.Content.ReadFromJsonAsync<InventoryItem>(_jsonOptions);
+
+        // Act: Delete product
+        var deleteRes = await client.DeleteAsync($"/api/inventory/{createdProd!.Id}");
+
+        // Assert: Success
+        deleteRes.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Fact]
+    public async Task Requirement12_NoIdentity_InProductionMode_Returns_401Unauthorized()
+    {
+        // Arrange: Factory with AllowDemoIdentityFallback = false (production behavior)
+        var prodFactory = _factory.WithWebHostBuilder(builder =>
+        {
+            builder.ConfigureAppConfiguration((context, config) =>
+            {
+                config.AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    ["Authentication:AllowDemoIdentityFallback"] = "false"
+                });
+            });
+        });
+
+        var client = prodFactory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Tenant-ID", "acme-retail");
+        // No X-User-ID or Bearer token passed
+
+        // Act
+        var response = await client.GetAsync("/api/inventory");
+
+        // Assert: Middleware halts with 401 Unauthorized
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        var content = await response.Content.ReadAsStringAsync();
+        content.Should().Contain("AuthenticationRequired");
+    }
+
+    [Fact]
+    public async Task Requirement13_NoIdentity_WithDemoFallback_ExplicitlyEnabled_Succeeds()
+    {
+        // Arrange: Factory with AllowDemoIdentityFallback = true (demo mode)
+        var demoFactory = _factory.WithWebHostBuilder(builder =>
+        {
+            builder.ConfigureAppConfiguration((context, config) =>
+            {
+                config.AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    ["Authentication:AllowDemoIdentityFallback"] = "true"
+                });
+            });
+        });
+
+        var client = demoFactory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Tenant-ID", "acme-retail");
+        // No X-User-ID passed
+
+        // Act
+        var response = await client.GetAsync("/api/inventory");
+
+        // Assert: Succeeds because demo fallback defaults to usr_admin_1
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Fact]
+    public async Task Requirement14_ValidUser_WithUnauthorizedTenant_Returns_403Forbidden()
+    {
+        // Arrange: usr_viewer_1 (authorized only for zenith-supplies) requests acme-retail
+        var client = CreateClientWithTenant("acme-retail", "usr_viewer_1");
+
+        // Act
+        var response = await client.GetAsync("/api/inventory");
+
+        // Assert: Blocked with 403
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        var content = await response.Content.ReadAsStringAsync();
+        content.Should().Contain("TenantAccessDenied");
     }
 }

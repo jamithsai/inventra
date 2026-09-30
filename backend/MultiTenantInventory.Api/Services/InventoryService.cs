@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using MultiTenantInventory.Api.Data;
 using MultiTenantInventory.Api.DTOs;
 using MultiTenantInventory.Api.Models;
+using MultiTenantInventory.Api.Storage;
 using MultiTenantInventory.Api.Tenant;
 
 namespace MultiTenantInventory.Api.Services;
@@ -10,12 +11,18 @@ public class InventoryService : IInventoryService
 {
     private readonly AppDbContext _dbContext;
     private readonly ITenantContext _tenantContext;
+    private readonly IFileStorageService _fileStorageService;
     private readonly ILogger<InventoryService> _logger;
 
-    public InventoryService(AppDbContext dbContext, ITenantContext tenantContext, ILogger<InventoryService> logger)
+    public InventoryService(
+        AppDbContext dbContext, 
+        ITenantContext tenantContext, 
+        IFileStorageService fileStorageService,
+        ILogger<InventoryService> logger)
     {
         _dbContext = dbContext;
         _tenantContext = tenantContext;
+        _fileStorageService = fileStorageService;
         _logger = logger;
     }
 
@@ -168,8 +175,34 @@ public class InventoryService : IInventoryService
         if (item == null)
             return false;
 
+        // 1. Find all TenantFiles associated with this inventory item within the current tenant scope.
+        // EF Core Global Query Filter on TenantFiles guarantees we only find files belonging strictly to the active tenant.
+        var associatedFiles = await _dbContext.TenantFiles
+            .Where(f => f.AssociatedItemId == id)
+            .ToListAsync(cancellationToken);
+
+        int deletedFilesCount = 0;
+        foreach (var file in associatedFiles)
+        {
+            try
+            {
+                // Delete file from S3 / Local storage and remove database record
+                var fileDeleted = await _fileStorageService.DeleteFileAsync(file.Id, cancellationToken);
+                if (fileDeleted)
+                {
+                    deletedFilesCount++;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to delete associated storage file '{FileId}' ({FileName}) for product '{ItemId}'. Continuing cleanup.", file.Id, file.FileName, id);
+            }
+        }
+
+        // 2. Remove the inventory item entity
         _dbContext.InventoryItems.Remove(item);
 
+        // 3. Record comprehensive audit log
         _dbContext.AuditLogs.Add(new AuditLog
         {
             Id = Guid.NewGuid().ToString(),
@@ -179,10 +212,11 @@ public class InventoryService : IInventoryService
             Action = "PRODUCT_DELETED",
             EntityType = "InventoryItem",
             EntityId = item.Id,
-            Details = $"Deleted product '{item.Name}' ({item.SKU}) from active tenant inventory."
+            Details = $"Deleted product '{item.Name}' ({item.SKU}) and {deletedFilesCount} associated storage file(s) from active tenant inventory."
         });
 
         await _dbContext.SaveChangesAsync(cancellationToken);
+        _logger.LogInformation("Product '{ItemId}' deleted successfully with {FileCount} associated file(s) for tenant '{TenantId}'.", id, deletedFilesCount, _tenantContext.CurrentTenantId);
         return true;
     }
 

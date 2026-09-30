@@ -177,21 +177,28 @@ public class S3FileStorageService : IFileStorageService
             return false;
 
         // Delete from S3 / Local
-        if (HasAwsCredentials() && _s3Client != null)
+        try
         {
-            await _s3Client.DeleteObjectAsync(new DeleteObjectRequest
+            if (HasAwsCredentials() && _s3Client != null)
             {
-                BucketName = _bucketName,
-                Key = file.S3Key
-            }, cancellationToken);
-        }
-        else
-        {
-            var localPath = Path.Combine(_localStorageRoot, file.S3Key.Replace('/', Path.DirectorySeparatorChar));
-            if (File.Exists(localPath))
-            {
-                File.Delete(localPath);
+                await _s3Client.DeleteObjectAsync(new DeleteObjectRequest
+                {
+                    BucketName = _bucketName,
+                    Key = file.S3Key
+                }, cancellationToken);
             }
+            else
+            {
+                var localPath = Path.Combine(_localStorageRoot, file.S3Key.Replace('/', Path.DirectorySeparatorChar));
+                if (File.Exists(localPath))
+                {
+                    File.Delete(localPath);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to delete physical storage object for key '{Key}'. Continuing database record cleanup.", file.S3Key);
         }
 
         _dbContext.TenantFiles.Remove(file);

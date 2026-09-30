@@ -10,11 +10,16 @@ public class TenantResolutionMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly ILogger<TenantResolutionMiddleware> _logger;
+    private readonly IConfiguration _configuration;
 
-    public TenantResolutionMiddleware(RequestDelegate next, ILogger<TenantResolutionMiddleware> logger)
+    public TenantResolutionMiddleware(
+        RequestDelegate next, 
+        ILogger<TenantResolutionMiddleware> logger,
+        IConfiguration configuration)
     {
         _next = next;
         _logger = logger;
+        _configuration = configuration;
     }
 
     public async Task InvokeAsync(
@@ -60,11 +65,11 @@ public class TenantResolutionMiddleware
             return;
         }
 
-        // 4. Identify the Authenticated User (from X-User-ID header, JWT sub/nameidentifier claim, or default demo admin)
+        // 4. Identify the Authenticated User (from JWT claims, X-User-ID header, or explicit demo fallback if enabled)
         var userId = GetAuthenticatedUserId(context);
         if (string.IsNullOrEmpty(userId))
         {
-            _logger.LogWarning("Unauthenticated request to tenant endpoint: {Path}", path);
+            _logger.LogWarning("Unauthenticated request to tenant endpoint: {Path}. Returning 401 Unauthorized.", path);
             await WriteErrorResponseAsync(
                 context, 
                 HttpStatusCode.Unauthorized, 
@@ -79,7 +84,7 @@ public class TenantResolutionMiddleware
         {
             _logger.LogWarning("User '{UserId}' is NOT authorized for tenant '{TenantId}'. Access DENIED.", userId, requestedTenantId);
             
-            // Record a security event in the audit log (bypassing tenant context temporarily)
+            // Record a security event in the audit log
             try
             {
                 var securityLog = new AuditLog
@@ -91,7 +96,7 @@ public class TenantResolutionMiddleware
                     Action = "SECURITY_ATTACK_BLOCKED",
                     EntityType = "SecurityViolation",
                     EntityId = path,
-                    Details = $"Tenant Resolution Middleware blocked unauthorized header spoofing for tenant '{requestedTenantId}' by user '{userId}'."
+                    Details = $"Tenant Resolution Middleware blocked unauthorized access attempt for tenant '{requestedTenantId}' by user '{userId}'."
                 };
                 dbContext.AuditLogs.Add(securityLog);
                 await dbContext.SaveChangesAsync(context.RequestAborted);
@@ -140,15 +145,9 @@ public class TenantResolutionMiddleware
         return false;
     }
 
-    private static string? GetAuthenticatedUserId(HttpContext context)
+    private string? GetAuthenticatedUserId(HttpContext context)
     {
-        // 1. Check direct X-User-ID header (Prototype Auth)
-        if (context.Request.Headers.TryGetValue("X-User-ID", out var userHeader) && !string.IsNullOrWhiteSpace(userHeader.FirstOrDefault()))
-        {
-            return userHeader.FirstOrDefault()!.Trim();
-        }
-
-        // 2. Check JWT Claims
+        // 1. Check JWT Claims if authenticated
         if (context.User?.Identity?.IsAuthenticated == true)
         {
             var claim = context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier) ??
@@ -157,8 +156,22 @@ public class TenantResolutionMiddleware
             if (claim != null) return claim.Value;
         }
 
-        // 3. Prototype default fallback to demo admin if not supplied
-        return "usr_admin_1";
+        // 2. Check X-User-ID header (Supported for demo / development persona switching)
+        if (context.Request.Headers.TryGetValue("X-User-ID", out var userHeader) && !string.IsNullOrWhiteSpace(userHeader.FirstOrDefault()))
+        {
+            return userHeader.FirstOrDefault()!.Trim();
+        }
+
+        // 3. Demo Identity Fallback (ONLY if explicitly enabled via configuration and NEVER silently in production)
+        var allowDemoFallback = _configuration.GetValue<bool>("Authentication:AllowDemoIdentityFallback", false);
+        if (allowDemoFallback)
+        {
+            _logger.LogInformation("DEMO_AUTH_FALLBACK_USED: Defaulting to demo admin 'usr_admin_1' for endpoint {Path}", context.Request.Path);
+            return "usr_admin_1";
+        }
+
+        // In production / when fallback is disabled, return null -> triggers HTTP 401 Unauthorized
+        return null;
     }
 
     private static async Task WriteErrorResponseAsync(HttpContext context, HttpStatusCode statusCode, string errorCode, string message)
