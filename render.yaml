@@ -1,7 +1,7 @@
 services:
   # 1. Backend ASP.NET Core Web API
   - type: web
-    name: nexus-backend-api
+    name: inventra-backend-api
     runtime: docker
     dockerfilePath: backend/MultiTenantInventory.Api/Dockerfile
     dockerContext: backend/MultiTenantInventory.Api
@@ -16,13 +16,13 @@ services:
 
   # 2. Frontend React Dashboard
   - type: web
-    name: nexus-frontend-dashboard
+    name: inventra-frontend-dashboard
     runtime: static
     buildCommand: cd frontend && npm install && npm run build
     staticPublishPath: frontend/dist
     envVars:
       - key: VITE_API_URL
-        value: https://nexus-backend-api.onrender.com/api
+        value: https://inventra-backend-api.onrender.com/api
     headers:
       - path: /*
         name: Cache-Control
