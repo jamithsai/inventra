@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MultiTenantInventory.Api", "MultiTenantInventory.Api\MultiTenantInventory.Api.csproj", "{88F80541-0DF4-4FB8-8086-B33530BE3ADD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MultiTenantInventory.Tests", "MultiTenantInventory.Tests\MultiTenantInventory.Tests.csproj", "{9E451557-7D2F-4DE0-896A-FC8B32C8DEC8}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{88F80541-0DF4-4FB8-8086-B33530BE3ADD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{88F80541-0DF4-4FB8-8086-B33530BE3ADD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{88F80541-0DF4-4FB8-8086-B33530BE3ADD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{88F80541-0DF4-4FB8-8086-B33530BE3ADD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9E451557-7D2F-4DE0-896A-FC8B32C8DEC8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9E451557-7D2F-4DE0-896A-FC8B32C8DEC8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9E451557-7D2F-4DE0-896A-FC8B32C8DEC8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9E451557-7D2F-4DE0-896A-FC8B32C8DEC8}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
