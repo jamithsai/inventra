@@ -4,11 +4,8 @@ import {
   Package, 
   FolderLock, 
   ScrollText, 
-  ShieldAlert, 
-  BookOpen, 
-  Layers, 
-  KeyRound,
-  ExternalLink
+  ShieldCheck, 
+  Layers
 } from 'lucide-react';
 
 export type TabType = 'dashboard' | 'inventory' | 'files' | 'audit' | 'security-demo' | 'architecture';
@@ -26,81 +23,78 @@ export const Sidebar: React.FC<SidebarProps> = ({
   tenantName,
   tenantId,
 }) => {
-  const navItems: { id: TabType; label: string; icon: React.ReactNode; badge?: string; badgeColor?: string }[] = [
+  const navItems: { id: TabType; label: string; icon: React.ReactNode; badge?: string }[] = [
     {
       id: 'dashboard',
-      label: 'Dashboard',
-      icon: <LayoutDashboard className="w-5 h-5" />,
+      label: 'Overview',
+      icon: <LayoutDashboard className="w-4 h-4" />,
     },
     {
       id: 'inventory',
-      label: 'Inventory Catalog',
-      icon: <Package className="w-5 h-5" />,
+      label: 'Inventory',
+      icon: <Package className="w-4 h-4" />,
     },
     {
       id: 'files',
-      label: 'S3 File Storage',
-      icon: <FolderLock className="w-5 h-5" />,
-      badge: 'S3 Path',
-      badgeColor: 'bg-amber-950 text-amber-400 border border-amber-800',
+      label: 'Files & Storage',
+      icon: <FolderLock className="w-4 h-4" />,
+      badge: 'S3',
     },
     {
       id: 'audit',
-      label: 'Audit Logs',
-      icon: <ScrollText className="w-5 h-5" />,
+      label: 'Audit Trail',
+      icon: <ScrollText className="w-4 h-4" />,
     },
     {
       id: 'security-demo',
-      label: 'Tenant Isolation Demo',
-      icon: <ShieldAlert className="w-5 h-5" />,
-      badge: 'LIVE TEST',
-      badgeColor: 'bg-rose-950 text-rose-400 border border-rose-800 animate-pulse',
+      label: 'Isolation Bench',
+      icon: <ShieldCheck className="w-4 h-4" />,
+      badge: 'Demo',
     },
     {
       id: 'architecture',
-      label: 'Architecture & Proof',
-      icon: <Layers className="w-5 h-5" />,
+      label: 'Architecture',
+      icon: <Layers className="w-4 h-4" />,
     },
   ];
 
   return (
-    <aside className="w-64 bg-slate-900 border-r border-slate-800 flex flex-col shrink-0 min-h-[calc(100vh-4rem)]">
+    <aside className="w-56 bg-zinc-950 border-r border-zinc-800/80 flex flex-col shrink-0 min-h-[calc(100vh-3.5rem)]">
       {/* Active Tenant Context Card */}
-      <div className="p-4 border-b border-slate-800 bg-slate-950/40">
-        <div className="text-[11px] font-mono uppercase tracking-wider text-slate-400 flex items-center justify-between">
-          <span>Active Context</span>
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+      <div className="p-3.5 border-b border-zinc-800/80">
+        <div className="text-[10px] font-mono uppercase tracking-wider text-zinc-500">
+          Active Tenant
         </div>
-        <div className="mt-1 font-semibold text-slate-100 truncate">
-          {tenantName || 'No Tenant Selected'}
+        <div className="font-medium text-xs text-zinc-200 mt-0.5 truncate">
+          {tenantName || 'No Context'}
         </div>
-        <div className="mt-0.5 text-xs font-mono text-cyan-400 bg-slate-900 px-2 py-0.5 rounded border border-slate-800 truncate">
-          X-Tenant-ID: {tenantId || 'none'}
+        <div className="mt-1 text-[11px] font-mono text-zinc-400 bg-zinc-900 px-2 py-0.5 rounded border border-zinc-800 truncate">
+          {tenantId || 'none'}
         </div>
       </div>
 
       {/* Navigation Links */}
-      <nav className="p-3 space-y-1 flex-1">
+      <nav className="p-2 space-y-0.5 flex-1">
         {navItems.map((item) => {
           const isActive = currentTab === item.id;
           return (
             <button
               key={item.id}
               onClick={() => onTabChange(item.id)}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl font-medium text-sm transition group ${
+              className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-xs font-medium transition ${
                 isActive
-                  ? 'bg-cyan-600 text-white shadow-lg shadow-cyan-600/30'
-                  : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/70'
+                  ? 'bg-zinc-900 text-zinc-100 border border-zinc-800 shadow-sm'
+                  : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/50'
               }`}
             >
-              <div className="flex items-center space-x-3">
-                <span className={isActive ? 'text-white' : 'text-slate-400 group-hover:text-cyan-400'}>
+              <div className="flex items-center space-x-2.5">
+                <span className={isActive ? 'text-zinc-100' : 'text-zinc-500'}>
                   {item.icon}
                 </span>
                 <span>{item.label}</span>
               </div>
               {item.badge && (
-                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider ${item.badgeColor}`}>
+                <span className="text-[9px] font-mono px-1.5 py-0.2 rounded uppercase bg-zinc-900 text-zinc-400 border border-zinc-800">
                   {item.badge}
                 </span>
               )}
@@ -109,15 +103,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
         })}
       </nav>
 
-      {/* Security Guarantee Box */}
-      <div className="p-4 m-3 rounded-xl bg-slate-950 border border-slate-800 text-xs">
-        <div className="flex items-center space-x-2 text-cyan-400 font-semibold mb-1">
-          <KeyRound className="w-4 h-4" />
-          <span>Tenant Data Isolation</span>
-        </div>
-        <p className="text-slate-400 leading-relaxed text-[11px]">
-          EF Core Global Query Filters enforce <code className="text-cyan-300">TenantId == CurrentTenantId</code> on all DB queries. S3 keys are prefixed <code className="text-amber-300">/tenants/{'{tenantId}'}/</code>.
-        </p>
+      {/* Security Statement Footer */}
+      <div className="p-3 m-2 rounded-lg bg-zinc-900/60 border border-zinc-800/80 text-[11px] text-zinc-500 leading-normal">
+        <div className="font-mono text-[10px] text-zinc-400 uppercase tracking-wide mb-0.5">Isolation Invariant</div>
+        EF Core Query Filters enforce <code className="text-zinc-300 font-mono">TenantId</code> per query.
       </div>
     </aside>
   );

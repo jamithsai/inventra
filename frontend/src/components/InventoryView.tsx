@@ -7,12 +7,7 @@ import {
   Trash2, 
   SlidersHorizontal, 
   Package, 
-  AlertCircle, 
-  CheckCircle2, 
-  XCircle,
-  TrendingUp,
   RefreshCw,
-  ExternalLink,
   ArrowUpDown
 } from 'lucide-react';
 import type { InventoryItem, Tenant } from '../types';
@@ -70,8 +65,8 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
         return matchesSearch && matchesCategory && matchesStatus;
       })
       .sort((a, b) => {
-        let valA = a[sortBy];
-        let valB = b[sortBy];
+        const valA = a[sortBy];
+        const valB = b[sortBy];
         if (typeof valA === 'string') {
           return sortOrder === 'asc' 
             ? (valA as string).localeCompare(valB as string)
@@ -101,59 +96,59 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
   return (
     <div className="space-y-6">
       {/* Header & Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-800 pb-5">
         <div>
-          <div className="flex items-center space-x-2">
-            <h1 className="text-2xl font-bold text-white tracking-tight">Tenant Inventory Catalog</h1>
-            <span className="text-xs px-2.5 py-0.5 rounded-full font-mono bg-cyan-950 text-cyan-400 border border-cyan-800">
-              {filteredItems.length} Products
+          <div className="flex items-center space-x-2.5">
+            <h1 className="text-xl font-semibold text-zinc-100 tracking-tight">Inventory Catalog</h1>
+            <span className="text-xs px-2 py-0.5 rounded font-mono bg-zinc-800 text-zinc-300 border border-zinc-700">
+              {filteredItems.length} SKUs
             </span>
           </div>
-          <p className="text-xs text-slate-400 mt-0.5">
-            Real-time isolated stock items for <strong className="text-slate-200">{currentTenant?.name}</strong> (Tenant ID: <code className="text-cyan-300 font-mono">{currentTenant?.id}</code>)
+          <p className="text-xs text-zinc-400 mt-1">
+            Data isolated to <strong className="text-zinc-200 font-medium">{currentTenant?.name}</strong> (Tenant ID: <code className="text-zinc-300 font-mono">{currentTenant?.id}</code>)
           </p>
         </div>
 
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-2.5">
           <button
             onClick={onRefresh}
             disabled={loading}
-            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition"
+            className="p-2 rounded-md bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 border border-zinc-800 transition"
             title="Refresh Catalog"
           >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-cyan-400' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-zinc-200' : ''}`} />
           </button>
           <button
             onClick={onOpenAddModal}
-            className="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-semibold text-sm transition shadow-lg shadow-cyan-500/20 flex items-center space-x-2"
+            className="px-3.5 py-1.5 rounded-md bg-zinc-100 hover:bg-white text-zinc-900 font-medium text-xs transition shadow-sm flex items-center space-x-1.5"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-3.5 h-3.5" />
             <span>Add Product</span>
           </button>
         </div>
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 shadow-sm flex flex-col md:flex-row items-center gap-3">
+      <div className="p-3 rounded-lg bg-zinc-900 border border-zinc-800 flex flex-col md:flex-row items-center gap-3">
         {/* Search */}
         <div className="relative flex-1 w-full">
-          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+          <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
           <input
             type="text"
-            placeholder="Search by Product Name, SKU, Category..."
+            placeholder="Filter by product name, SKU, or category..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 rounded-lg bg-slate-950 border border-slate-800 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition"
+            className="w-full pl-9 pr-3 py-1.5 rounded-md bg-zinc-950 border border-zinc-800 text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-zinc-600 transition"
           />
         </div>
 
         {/* Category Filter */}
         <div className="flex items-center space-x-2 w-full md:w-auto">
-          <Filter className="w-4 h-4 text-slate-400 shrink-0" />
+          <Filter className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
           <select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
-            className="px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-sm text-slate-300 focus:outline-none focus:border-cyan-500"
+            className="px-2.5 py-1.5 rounded-md bg-zinc-950 border border-zinc-800 text-xs text-zinc-300 focus:outline-none focus:border-zinc-600"
           >
             <option value="ALL">All Categories ({categories.length})</option>
             {categories.map((c) => (
@@ -169,9 +164,9 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-sm text-slate-300 focus:outline-none focus:border-cyan-500"
+            className="w-full px-2.5 py-1.5 rounded-md bg-zinc-950 border border-zinc-800 text-xs text-zinc-300 focus:outline-none focus:border-zinc-600"
           >
-            <option value="ALL">All Stock Statuses</option>
+            <option value="ALL">All Stock Levels</option>
             <option value="IN_STOCK">In Stock (&gt; Threshold)</option>
             <option value="LOW_STOCK">Low Stock (≤ Threshold)</option>
             <option value="OUT_OF_STOCK">Out of Stock (0 Units)</option>
@@ -180,58 +175,58 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
       </div>
 
       {/* Inventory Data Table */}
-      <div className="rounded-2xl bg-slate-900 border border-slate-800 shadow-xl overflow-hidden">
+      <div className="rounded-lg bg-zinc-900 border border-zinc-800 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-slate-950/70 border-b border-slate-800 text-xs text-slate-400 font-mono uppercase tracking-wider">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-zinc-950 border-b border-zinc-800 text-[11px] text-zinc-400 font-mono uppercase tracking-wider">
               <tr>
-                <th className="px-5 py-3.5">
-                  <button onClick={() => handleSort('name')} className="flex items-center space-x-1 hover:text-white">
+                <th className="px-4 py-3 font-medium">
+                  <button onClick={() => handleSort('name')} className="flex items-center space-x-1 hover:text-zinc-200">
                     <span>Product</span>
-                    <ArrowUpDown className="w-3.5 h-3.5" />
+                    <ArrowUpDown className="w-3 h-3 text-zinc-500" />
                   </button>
                 </th>
-                <th className="px-4 py-3.5">SKU</th>
-                <th className="px-4 py-3.5">Category</th>
-                <th className="px-4 py-3.5">
-                  <button onClick={() => handleSort('quantity')} className="flex items-center space-x-1 hover:text-white">
+                <th className="px-4 py-3 font-medium">SKU</th>
+                <th className="px-4 py-3 font-medium">Category</th>
+                <th className="px-4 py-3 font-medium">
+                  <button onClick={() => handleSort('quantity')} className="flex items-center space-x-1 hover:text-zinc-200">
                     <span>Stock Level</span>
-                    <ArrowUpDown className="w-3.5 h-3.5" />
+                    <ArrowUpDown className="w-3 h-3 text-zinc-500" />
                   </button>
                 </th>
-                <th className="px-4 py-3.5">
-                  <button onClick={() => handleSort('price')} className="flex items-center space-x-1 hover:text-white">
-                    <span>Unit Price</span>
-                    <ArrowUpDown className="w-3.5 h-3.5" />
+                <th className="px-4 py-3 font-medium">
+                  <button onClick={() => handleSort('price')} className="flex items-center space-x-1 hover:text-zinc-200">
+                    <span>Price</span>
+                    <ArrowUpDown className="w-3 h-3 text-zinc-500" />
                   </button>
                 </th>
-                <th className="px-4 py-3.5">Total Value</th>
-                <th className="px-4 py-3.5">Status</th>
-                <th className="px-5 py-3.5 text-right">Actions</th>
+                <th className="px-4 py-3 font-medium">Total Value</th>
+                <th className="px-4 py-3 font-medium">Status</th>
+                <th className="px-4 py-3 font-medium text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/80">
+            <tbody className="divide-y divide-zinc-800/60">
               {filteredItems.map((item) => {
                 const isOutOfStock = item.quantity === 0;
                 const isLowStock = !isOutOfStock && item.quantity <= item.lowStockThreshold;
 
                 return (
-                  <tr key={item.id} className="hover:bg-slate-800/40 transition group">
+                  <tr key={item.id} className="hover:bg-zinc-800/40 transition">
                     {/* Product Name & Image */}
-                    <td className="px-5 py-4">
+                    <td className="px-4 py-3">
                       <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center shrink-0 overflow-hidden text-slate-400 font-bold">
+                        <div className="w-8 h-8 rounded bg-zinc-950 border border-zinc-800 flex items-center justify-center shrink-0 overflow-hidden text-zinc-400">
                           {item.imageUrl ? (
                             <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
                           ) : (
-                            <Package className="w-5 h-5 text-cyan-400" />
+                            <Package className="w-4 h-4 text-zinc-500" />
                           )}
                         </div>
                         <div className="min-w-0">
-                          <div className="font-semibold text-slate-100 group-hover:text-cyan-300 transition truncate max-w-xs">
+                          <div className="font-medium text-zinc-200 truncate max-w-xs">
                             {item.name}
                           </div>
-                          <div className="text-[11px] font-mono text-slate-500">
+                          <div className="text-[10px] font-mono text-zinc-500">
                             ID: {item.id}
                           </div>
                         </div>
@@ -239,32 +234,32 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                     </td>
 
                     {/* SKU */}
-                    <td className="px-4 py-4 font-mono text-xs text-slate-300 font-medium">
+                    <td className="px-4 py-3 font-mono text-zinc-300">
                       {item.sku}
                     </td>
 
                     {/* Category */}
-                    <td className="px-4 py-4">
-                      <span className="px-2 py-0.5 rounded-md text-xs font-medium bg-slate-800 text-slate-300 border border-slate-700">
+                    <td className="px-4 py-3">
+                      <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-zinc-950 text-zinc-400 border border-zinc-800">
                         {item.category}
                       </span>
                     </td>
 
                     {/* Quantity & Bar */}
-                    <td className="px-4 py-4">
+                    <td className="px-4 py-3">
                       <div className="space-y-1">
                         <div className="flex items-center space-x-2">
-                          <span className="font-mono font-bold text-white text-sm">{item.quantity}</span>
-                          <span className="text-[11px] text-slate-500 font-mono">/ min {item.lowStockThreshold}</span>
+                          <span className="font-mono font-medium text-zinc-100">{item.quantity}</span>
+                          <span className="text-[10px] text-zinc-500 font-mono">/ min {item.lowStockThreshold}</span>
                         </div>
-                        <div className="w-24 h-1.5 rounded-full bg-slate-800 overflow-hidden">
+                        <div className="w-20 h-1 rounded-full bg-zinc-800 overflow-hidden">
                           <div
                             className={`h-full rounded-full ${
                               isOutOfStock
-                                ? 'bg-rose-500'
+                                ? 'bg-red-500'
                                 : isLowStock
-                                ? 'bg-amber-500'
-                                : 'bg-emerald-500'
+                                ? 'bg-amber-400'
+                                : 'bg-zinc-400'
                             }`}
                             style={{
                               width: `${Math.min(100, (item.quantity / Math.max(item.lowStockThreshold * 3, 10)) * 100)}%`,
@@ -275,59 +270,59 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                     </td>
 
                     {/* Unit Price */}
-                    <td className="px-4 py-4 font-mono text-slate-200">
+                    <td className="px-4 py-3 font-mono text-zinc-300">
                       {formatCurrency(item.price)}
                     </td>
 
                     {/* Total Value */}
-                    <td className="px-4 py-4 font-mono font-semibold text-emerald-400">
+                    <td className="px-4 py-3 font-mono font-medium text-zinc-100">
                       {formatCurrency(item.quantity * item.price)}
                     </td>
 
                     {/* Status Badge */}
-                    <td className="px-4 py-4">
+                    <td className="px-4 py-3">
                       {isOutOfStock ? (
-                        <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-rose-950 text-rose-400 border border-rose-800">
-                          <XCircle className="w-3 h-3" />
+                        <span className="inline-flex items-center space-x-1.5 px-2 py-0.5 rounded text-[10px] font-mono bg-zinc-950 text-red-400 border border-zinc-800">
+                          <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
                           <span>OUT OF STOCK</span>
                         </span>
                       ) : isLowStock ? (
-                        <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-950 text-amber-400 border border-amber-800">
-                          <AlertCircle className="w-3 h-3" />
+                        <span className="inline-flex items-center space-x-1.5 px-2 py-0.5 rounded text-[10px] font-mono bg-zinc-950 text-amber-300 border border-zinc-800">
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
                           <span>LOW STOCK</span>
                         </span>
                       ) : (
-                        <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-950 text-emerald-400 border border-emerald-800">
-                          <CheckCircle2 className="w-3 h-3" />
+                        <span className="inline-flex items-center space-x-1.5 px-2 py-0.5 rounded text-[10px] font-mono bg-zinc-950 text-zinc-300 border border-zinc-800">
+                          <span className="w-1.5 h-1.5 rounded-full bg-zinc-400" />
                           <span>IN STOCK</span>
                         </span>
                       )}
                     </td>
 
                     {/* Actions */}
-                    <td className="px-5 py-4 text-right">
+                    <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end space-x-1.5">
                         <button
                           onClick={() => onOpenStockModal(item)}
                           title="Adjust Stock Level"
-                          className="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-400 text-xs font-semibold border border-slate-700 flex items-center space-x-1 transition"
+                          className="px-2 py-1 rounded bg-zinc-950 hover:bg-zinc-800 text-zinc-300 text-xs border border-zinc-800 flex items-center space-x-1 transition"
                         >
-                          <SlidersHorizontal className="w-3.5 h-3.5" />
+                          <SlidersHorizontal className="w-3 h-3 text-zinc-400" />
                           <span>Adjust</span>
                         </button>
                         <button
                           onClick={() => onOpenEditModal(item)}
                           title="Edit Details"
-                          className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition"
+                          className="p-1 rounded bg-zinc-950 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 border border-zinc-800 transition"
                         >
-                          <Edit2 className="w-3.5 h-3.5" />
+                          <Edit2 className="w-3 h-3" />
                         </button>
                         <button
                           onClick={() => onDeleteItem(item.id, item.name)}
                           title="Delete Product"
-                          className="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-950 text-slate-400 hover:text-rose-400 border border-slate-700 hover:border-rose-800 transition"
+                          className="p-1 rounded bg-zinc-950 hover:bg-zinc-800 text-zinc-500 hover:text-red-400 border border-zinc-800 transition"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          <Trash2 className="w-3 h-3" />
                         </button>
                       </div>
                     </td>
@@ -338,11 +333,11 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
               {filteredItems.length === 0 && (
                 <tr>
                   <td colSpan={8} className="text-center py-12">
-                    <div className="w-12 h-12 rounded-2xl bg-slate-800 flex items-center justify-center mx-auto text-slate-400 mb-3">
-                      <Package className="w-6 h-6" />
+                    <div className="w-10 h-10 rounded-lg bg-zinc-950 border border-zinc-800 flex items-center justify-center mx-auto text-zinc-500 mb-3">
+                      <Package className="w-5 h-5" />
                     </div>
-                    <div className="text-base font-semibold text-slate-300">No Inventory Found</div>
-                    <p className="text-xs text-slate-500 mt-1">
+                    <div className="text-sm font-medium text-zinc-300">No Inventory Found</div>
+                    <p className="text-xs text-zinc-500 mt-1 max-w-md mx-auto">
                       {searchTerm || categoryFilter !== 'ALL' || statusFilter !== 'ALL'
                         ? 'No products matched your active filters. Clear search or filters to see all items.'
                         : `No products currently exist in tenant ${currentTenant?.name}. Click "Add Product" to add one.`}

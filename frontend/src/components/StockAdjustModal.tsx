@@ -15,7 +15,6 @@ export const StockAdjustModal: React.FC<StockAdjustModalProps> = ({
   onClose,
   item,
   onAdjust,
-  currentTenant,
 }) => {
   const [type, setType] = useState<'IN' | 'OUT' | 'ADJUSTMENT'>('IN');
   const [quantityChange, setQuantityChange] = useState<number>(10);
@@ -50,17 +49,17 @@ export const StockAdjustModal: React.FC<StockAdjustModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-150">
-      <div className="w-full max-w-md rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl p-6 space-y-5">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
+      <div className="w-full max-w-md rounded-lg bg-zinc-900 border border-zinc-800 shadow-2xl p-5 space-y-4">
         {/* Header */}
-        <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
           <div className="flex items-center space-x-2.5">
-            <div className="w-8 h-8 rounded-lg bg-indigo-950 text-indigo-400 flex items-center justify-center border border-indigo-800">
-              <SlidersHorizontal className="w-4 h-4" />
+            <div className="w-7 h-7 rounded bg-zinc-950 text-zinc-300 flex items-center justify-center border border-zinc-800">
+              <SlidersHorizontal className="w-3.5 h-3.5" />
             </div>
             <div>
-              <h3 className="font-bold text-white text-base">Adjust Stock Level</h3>
-              <p className="text-xs text-slate-400 font-mono truncate max-w-[200px]">
+              <h3 className="font-semibold text-zinc-100 text-sm">Adjust Stock Level</h3>
+              <p className="text-[11px] text-zinc-400 font-mono truncate max-w-[200px]">
                 {item.name} ({item.sku})
               </p>
             </div>
@@ -68,72 +67,72 @@ export const StockAdjustModal: React.FC<StockAdjustModalProps> = ({
 
           <button
             onClick={onClose}
-            className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
+            className="p-1 rounded text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {error && (
-          <div className="p-3 rounded-lg bg-rose-950/60 border border-rose-800 text-rose-300 text-xs flex items-center space-x-2">
-            <AlertCircle className="w-4 h-4 shrink-0" />
+          <div className="p-2.5 rounded bg-zinc-950 border border-red-900/50 text-red-400 text-xs flex items-center space-x-2 font-mono">
+            <AlertCircle className="w-3.5 h-3.5 shrink-0" />
             <span>{error}</span>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-3.5">
           {/* Current vs Projected preview */}
-          <div className="grid grid-cols-2 gap-3 p-3 rounded-xl bg-slate-950 border border-slate-800 text-center">
+          <div className="grid grid-cols-2 gap-3 p-3 rounded-lg bg-zinc-950 border border-zinc-800 text-center">
             <div>
-              <div className="text-[10px] uppercase font-mono text-slate-400">Current Stock</div>
-              <div className="text-xl font-bold font-mono text-slate-100">{item.quantity} units</div>
+              <div className="text-[10px] uppercase font-mono text-zinc-500">Current Stock</div>
+              <div className="text-lg font-semibold font-mono text-zinc-200">{item.quantity} units</div>
             </div>
             <div>
-              <div className="text-[10px] uppercase font-mono text-cyan-400">Projected Stock</div>
-              <div className="text-xl font-bold font-mono text-cyan-400">{calculateNewStock()} units</div>
+              <div className="text-[10px] uppercase font-mono text-zinc-400">Projected Stock</div>
+              <div className="text-lg font-semibold font-mono text-zinc-100">{calculateNewStock()} units</div>
             </div>
           </div>
 
           {/* Operation Type Buttons */}
           <div>
-            <label className="block text-xs font-medium text-slate-300 mb-1.5">Adjustment Type</label>
+            <label className="block text-xs font-medium text-zinc-300 mb-1.5">Adjustment Type</label>
             <div className="grid grid-cols-3 gap-2">
               <button
                 type="button"
                 onClick={() => setType('IN')}
-                className={`py-2 rounded-lg text-xs font-semibold flex items-center justify-center space-x-1 border transition ${
+                className={`py-1.5 rounded-md text-xs font-medium flex items-center justify-center space-x-1 border transition ${
                   type === 'IN'
-                    ? 'bg-emerald-950 text-emerald-400 border-emerald-700'
-                    : 'bg-slate-800/80 text-slate-400 border-slate-700 hover:text-slate-200'
+                    ? 'bg-zinc-800 text-zinc-100 border-zinc-700'
+                    : 'bg-zinc-950 text-zinc-400 border-zinc-800 hover:text-zinc-200'
                 }`}
               >
-                <ArrowUpCircle className="w-3.5 h-3.5" />
+                <ArrowUpCircle className="w-3 h-3 text-zinc-300" />
                 <span>Stock IN (+)</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setType('OUT')}
-                className={`py-2 rounded-lg text-xs font-semibold flex items-center justify-center space-x-1 border transition ${
+                className={`py-1.5 rounded-md text-xs font-medium flex items-center justify-center space-x-1 border transition ${
                   type === 'OUT'
-                    ? 'bg-rose-950 text-rose-400 border-rose-700'
-                    : 'bg-slate-800/80 text-slate-400 border-slate-700 hover:text-slate-200'
+                    ? 'bg-zinc-800 text-zinc-100 border-zinc-700'
+                    : 'bg-zinc-950 text-zinc-400 border-zinc-800 hover:text-zinc-200'
                 }`}
               >
-                <ArrowDownCircle className="w-3.5 h-3.5" />
+                <ArrowDownCircle className="w-3 h-3 text-zinc-400" />
                 <span>Stock OUT (-)</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setType('ADJUSTMENT')}
-                className={`py-2 rounded-lg text-xs font-semibold flex items-center justify-center space-x-1 border transition ${
+                className={`py-1.5 rounded-md text-xs font-medium flex items-center justify-center space-x-1 border transition ${
                   type === 'ADJUSTMENT'
-                    ? 'bg-cyan-950 text-cyan-400 border-cyan-700'
-                    : 'bg-slate-800/80 text-slate-400 border-slate-700 hover:text-slate-200'
+                    ? 'bg-zinc-800 text-zinc-100 border-zinc-700'
+                    : 'bg-zinc-950 text-zinc-400 border-zinc-800 hover:text-zinc-200'
                 }`}
               >
-                <RefreshCw className="w-3.5 h-3.5" />
+                <RefreshCw className="w-3 h-3 text-zinc-400" />
                 <span>Override</span>
               </button>
             </div>
@@ -141,7 +140,7 @@ export const StockAdjustModal: React.FC<StockAdjustModalProps> = ({
 
           {/* Quantity Amount */}
           <div>
-            <label className="block text-xs font-medium text-slate-300 mb-1">
+            <label className="block text-xs font-medium text-zinc-300 mb-1">
               {type === 'ADJUSTMENT' ? 'New Total Stock Amount' : 'Quantity to Add / Deduct'}
             </label>
             <input
@@ -150,38 +149,38 @@ export const StockAdjustModal: React.FC<StockAdjustModalProps> = ({
               required
               value={quantityChange}
               onChange={(e) => setQuantityChange(Number(e.target.value))}
-              className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-sm font-mono text-white focus:outline-none focus:border-cyan-500"
+              className="w-full px-3 py-1.5 rounded-md bg-zinc-950 border border-zinc-800 text-xs font-mono text-zinc-100 focus:outline-none focus:border-zinc-500"
             />
           </div>
 
           {/* Audit Note */}
           <div>
-            <label className="block text-xs font-medium text-slate-300 mb-1">Audit Reason / Note</label>
+            <label className="block text-xs font-medium text-zinc-300 mb-1">Audit Reason / Note</label>
             <input
               type="text"
               required
               placeholder="e.g. Purchase order PO-998, Damaged units writeoff..."
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-cyan-500"
+              className="w-full px-3 py-1.5 rounded-md bg-zinc-950 border border-zinc-800 text-xs text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-zinc-500"
             />
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-end space-x-3 pt-3 border-t border-slate-800">
+          <div className="flex items-center justify-end space-x-2 pt-3 border-t border-zinc-800">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-300 text-xs font-semibold transition"
+              className="px-3 py-1.5 rounded-md bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs transition"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs transition shadow-lg shadow-cyan-500/20"
+              className="px-4 py-1.5 rounded-md bg-zinc-100 hover:bg-white disabled:opacity-40 text-zinc-900 font-medium text-xs transition shadow-sm"
             >
-              {isSubmitting ? 'Recording...' : 'Update & Audit Stock'}
+              {isSubmitting ? 'Recording...' : 'Update Stock'}
             </button>
           </div>
         </form>

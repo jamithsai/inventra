@@ -1,14 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Building2, 
-  User as UserIcon, 
-  ShieldCheck, 
   ChevronDown, 
-  RefreshCw, 
-  CheckCircle2, 
-  XCircle,
-  AlertTriangle,
-  Lock
+  RotateCw, 
+  Check, 
+  Lock,
+  Layers
 } from 'lucide-react';
 import type { Tenant, User } from '../types';
 
@@ -33,47 +30,42 @@ export const Navbar: React.FC<NavbarProps> = ({
   loading,
   onRefresh,
 }) => {
-  const [tenantDropdownOpen, setTenantDropdownOpen] = React.useState(false);
-  const [userDropdownOpen, setUserDropdownOpen] = React.useState(false);
+  const [tenantDropdownOpen, setTenantDropdownOpen] = useState(false);
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
 
   const isTenantAuthorized = (tenantId: string) => {
     return currentUser?.authorizedTenants.includes(tenantId);
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-slate-900/95 backdrop-blur border-b border-slate-800 shadow-md">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+    <header className="sticky top-0 z-40 bg-zinc-950/90 backdrop-blur-md border-b border-zinc-800/80">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="flex items-center justify-between h-14">
           {/* Brand Logo & Name */}
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-600 via-sky-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-sky-500/20">
-              <ShieldCheck className="w-6 h-6 text-white" />
+            <div className="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-700/80 flex items-center justify-center text-zinc-100 shadow-sm">
+              <Layers className="w-4 h-4" />
             </div>
-            <div>
-              <div className="flex items-center space-x-2">
-                <span className="text-lg font-bold tracking-tight bg-gradient-to-r from-white via-slate-100 to-slate-400 bg-clip-text text-transparent">
-                  NEXUS
-                </span>
-                <span className="px-2 py-0.5 text-xs font-semibold uppercase tracking-wider rounded-full bg-cyan-950/80 text-cyan-400 border border-cyan-800/60">
-                  Multi-Tenant
-                </span>
-              </div>
-              <p className="text-xs text-slate-400 hidden sm:block">
-                EF Core Query Filters • Tenant Middleware • S3 Isolation
-              </p>
+            <div className="flex items-center space-x-2.5">
+              <span className="text-sm font-semibold tracking-tight text-zinc-100 font-mono uppercase">
+                Nexus
+              </span>
+              <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-zinc-900 text-zinc-400 border border-zinc-800">
+                Multi-Tenant
+              </span>
             </div>
           </div>
 
           {/* Right Actions: Tenant Selector, User Persona Switcher, Refresh */}
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2.5">
             {/* Refresh Data Button */}
             <button
               onClick={onRefresh}
               disabled={loading}
               title="Refresh Data"
-              className="p-2 rounded-lg bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition border border-slate-700"
+              className="p-2 rounded-lg text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 transition border border-transparent hover:border-zinc-800"
             >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-cyan-400' : ''}`} />
+              <RotateCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-zinc-200' : ''}`} />
             </button>
 
             {/* Tenant Selector Dropdown */}
@@ -83,24 +75,20 @@ export const Navbar: React.FC<NavbarProps> = ({
                   setTenantDropdownOpen(!tenantDropdownOpen);
                   setUserDropdownOpen(false);
                 }}
-                className="flex items-center space-x-2 px-3.5 py-1.5 rounded-lg bg-slate-800/90 border border-slate-700 hover:border-slate-600 hover:bg-slate-750 transition text-sm text-slate-200"
+                className="flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition text-xs text-zinc-200"
               >
-                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-                <Building2 className="w-4 h-4 text-cyan-400" />
-                <div className="text-left">
-                  <div className="text-xs text-slate-400 font-mono leading-none">TENANT</div>
-                  <div className="font-semibold text-slate-100 leading-tight">
-                    {currentTenant ? currentTenant.name : 'Select Tenant'}
-                  </div>
-                </div>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                <div className="w-1.5 h-1.5 rounded-full bg-zinc-400" />
+                <Building2 className="w-3.5 h-3.5 text-zinc-400" />
+                <span className="font-medium text-zinc-100 max-w-[120px] truncate">
+                  {currentTenant ? currentTenant.name : 'Select Tenant'}
+                </span>
+                <ChevronDown className="w-3 h-3 text-zinc-500" />
               </button>
 
               {tenantDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-72 rounded-xl bg-slate-800 border border-slate-700 shadow-2xl py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
-                  <div className="px-3 py-1.5 border-b border-slate-700 text-xs font-semibold text-slate-400 uppercase tracking-wider flex justify-between items-center">
-                    <span>Switch Tenant Context</span>
-                    <span className="font-mono text-[10px] text-slate-400">X-Tenant-ID Header</span>
+                <div className="absolute right-0 mt-1.5 w-64 rounded-xl bg-zinc-900 border border-zinc-800 shadow-xl py-1 z-50 animate-in fade-in duration-100">
+                  <div className="px-3 py-1.5 border-b border-zinc-800/80 text-[10px] font-mono uppercase tracking-wider text-zinc-500">
+                    Switch Tenant Context
                   </div>
                   <div className="py-1">
                     {allTenants.map((t) => {
@@ -114,31 +102,25 @@ export const Navbar: React.FC<NavbarProps> = ({
                             onSelectTenant(t.id);
                             setTenantDropdownOpen(false);
                           }}
-                          className={`w-full text-left px-3 py-2 flex items-center justify-between hover:bg-slate-700/60 transition ${
-                            isSelected ? 'bg-cyan-950/40 text-cyan-300 font-medium' : 'text-slate-200'
+                          className={`w-full text-left px-3 py-2 flex items-center justify-between text-xs transition ${
+                            isSelected ? 'bg-zinc-800 text-zinc-100 font-medium' : 'text-zinc-300 hover:bg-zinc-800/60'
                           }`}
                         >
-                          <div className="flex items-center space-x-2.5">
-                            <div className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs ${
-                              isSelected ? 'bg-cyan-500 text-slate-950' : 'bg-slate-700 text-slate-300'
-                            }`}>
-                              {t.name.charAt(0)}
-                            </div>
-                            <div>
-                              <div className="text-sm font-medium">{t.name}</div>
-                              <div className="text-xs font-mono text-slate-400">{t.id}</div>
+                          <div className="flex items-center space-x-2 min-w-0">
+                            <span className="w-1.5 h-1.5 rounded-full bg-zinc-500" />
+                            <div className="truncate">
+                              <div className="truncate font-medium">{t.name}</div>
+                              <div className="text-[10px] font-mono text-zinc-500">{t.id}</div>
                             </div>
                           </div>
                           <div>
                             {authorized ? (
-                              <span className="inline-flex items-center space-x-1 px-1.5 py-0.5 rounded text-[11px] bg-emerald-950 text-emerald-400 border border-emerald-800">
-                                <CheckCircle2 className="w-3 h-3" />
-                                <span>Allowed</span>
+                              <span className="text-[10px] font-mono text-zinc-400 flex items-center gap-1">
+                                <Check className="w-3 h-3 text-zinc-400" />
                               </span>
                             ) : (
-                              <span className="inline-flex items-center space-x-1 px-1.5 py-0.5 rounded text-[11px] bg-rose-950 text-rose-400 border border-rose-800">
-                                <Lock className="w-3 h-3" />
-                                <span>Forbidden</span>
+                              <span className="text-[10px] font-mono text-zinc-500 flex items-center gap-1">
+                                <Lock className="w-3 h-3 text-zinc-600" />
                               </span>
                             )}
                           </div>
@@ -146,39 +128,32 @@ export const Navbar: React.FC<NavbarProps> = ({
                       );
                     })}
                   </div>
-                  <div className="px-3 pt-2 border-t border-slate-700/80 text-[11px] text-slate-400 flex items-center space-x-1">
-                    <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" />
-                    <span>Middleware rejects unauthorized tenant headers</span>
-                  </div>
                 </div>
               )}
             </div>
 
-            {/* User Switcher Dropdown */}
+            {/* User Persona Switcher */}
             <div className="relative">
               <button
                 onClick={() => {
                   setUserDropdownOpen(!userDropdownOpen);
                   setTenantDropdownOpen(false);
                 }}
-                className="flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-slate-800/90 border border-slate-700 hover:border-slate-600 hover:bg-slate-750 transition text-sm text-slate-200"
+                className="flex items-center space-x-2 px-2.5 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition text-xs text-zinc-200"
               >
-                <div className="w-7 h-7 rounded-lg bg-indigo-600 flex items-center justify-center text-xs font-bold text-white shadow">
+                <div className="w-5 h-5 rounded bg-zinc-800 border border-zinc-700/80 flex items-center justify-center text-[10px] font-semibold text-zinc-200">
                   {currentUser?.name.charAt(0) || 'U'}
                 </div>
-                <div className="text-left hidden md:block">
-                  <div className="text-xs text-slate-400 font-mono leading-none">{currentUser?.role || 'USER'}</div>
-                  <div className="font-semibold text-slate-100 leading-tight">
-                    {currentUser ? currentUser.name : 'Select User'}
-                  </div>
-                </div>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                <span className="font-medium text-zinc-200 hidden sm:inline truncate max-w-[100px]">
+                  {currentUser ? currentUser.name : 'Select User'}
+                </span>
+                <ChevronDown className="w-3 h-3 text-zinc-500" />
               </button>
 
               {userDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-80 rounded-xl bg-slate-800 border border-slate-700 shadow-2xl py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
-                  <div className="px-3 py-1.5 border-b border-slate-700 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                    Demo User Persona (Permissions)
+                <div className="absolute right-0 mt-1.5 w-72 rounded-xl bg-zinc-900 border border-zinc-800 shadow-xl py-1 z-50 animate-in fade-in duration-100">
+                  <div className="px-3 py-1.5 border-b border-zinc-800/80 text-[10px] font-mono uppercase tracking-wider text-zinc-500">
+                    Switch User Persona
                   </div>
                   <div className="py-1">
                     {allUsers.map((u) => {
@@ -190,31 +165,21 @@ export const Navbar: React.FC<NavbarProps> = ({
                             onSelectUser(u.id);
                             setUserDropdownOpen(false);
                           }}
-                          className={`w-full text-left px-3 py-2.5 flex items-start space-x-3 hover:bg-slate-700/60 transition ${
-                            isSelected ? 'bg-indigo-950/40 border-l-2 border-indigo-400' : ''
+                          className={`w-full text-left px-3 py-2 text-xs transition ${
+                            isSelected ? 'bg-zinc-800 text-zinc-100' : 'text-zinc-300 hover:bg-zinc-800/60'
                           }`}
                         >
-                          <div className="w-8 h-8 rounded-lg bg-indigo-700 flex items-center justify-center text-xs font-bold text-white shrink-0 mt-0.5">
-                            {u.name.charAt(0)}
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium">{u.name}</span>
+                            <span className="text-[10px] font-mono text-zinc-500 uppercase">{u.role}</span>
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm font-medium text-slate-100">{u.name}</span>
-                              <span className="text-[10px] px-1.5 py-0.5 rounded font-mono bg-slate-700 text-slate-300">
-                                {u.role}
+                          <div className="text-[10px] text-zinc-500 font-mono mt-0.5 truncate">{u.email}</div>
+                          <div className="mt-1 flex flex-wrap gap-1">
+                            {u.authorizedTenants.map((tId) => (
+                              <span key={tId} className="text-[9px] font-mono px-1 py-0.2 rounded bg-zinc-950 text-zinc-400 border border-zinc-800">
+                                {tId}
                               </span>
-                            </div>
-                            <div className="text-xs text-slate-400 truncate">{u.email}</div>
-                            <div className="mt-1 flex flex-wrap gap-1">
-                              {u.authorizedTenants.map((tId) => (
-                                <span
-                                  key={tId}
-                                  className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-cyan-950 text-cyan-300 border border-cyan-800"
-                                >
-                                  ✓ {tId}
-                                </span>
-                              ))}
-                            </div>
+                            ))}
                           </div>
                         </button>
                       );

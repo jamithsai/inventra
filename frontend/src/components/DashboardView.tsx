@@ -1,17 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { 
-  Package, 
-  Layers, 
-  AlertTriangle, 
-  XCircle, 
-  DollarSign, 
   ArrowUpRight, 
-  ArrowDownRight, 
-  ShieldCheck, 
-  TrendingUp,
-  Activity,
-  Box,
-  Building2
+  Plus
 } from 'lucide-react';
 import type { Tenant, InventoryItem, DashboardStats, InventoryTransaction } from '../types';
 
@@ -33,7 +23,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onOpenAddModal,
 }) => {
   // Category calculations
-  const categoryStats = React.useMemo(() => {
+  const categoryStats = useMemo(() => {
     const map: Record<string, { count: number; totalQty: number; totalValue: number }> = {};
     items.forEach((item) => {
       if (!map[item.category]) {
@@ -60,152 +50,118 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   };
 
   return (
-    <div className="space-y-6">
-      {/* Top Tenant Header Banner */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-slate-850 to-indigo-950 border border-slate-800 p-6 shadow-xl">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
-          <div>
-            <div className="flex items-center space-x-2 text-cyan-400 text-xs font-mono font-semibold uppercase tracking-wider mb-1">
-              <ShieldCheck className="w-4 h-4" />
-              <span>Isolated Tenant Dashboard</span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight flex items-center gap-3">
-              <span>{currentTenant?.name || 'Loading Tenant...'}</span>
-              <span className="text-xs px-2.5 py-1 rounded-md font-mono bg-slate-800 text-slate-300 border border-slate-700 font-normal">
-                ID: {currentTenant?.id}
-              </span>
+    <div className="space-y-5">
+      {/* Top Tenant Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-zinc-800/80">
+        <div>
+          <div className="flex items-center space-x-2">
+            <h1 className="text-xl font-semibold text-zinc-100 tracking-tight">
+              {currentTenant?.name || 'Loading Tenant...'}
             </h1>
-            <p className="text-sm text-slate-400 mt-1 max-w-2xl">
-              {currentTenant?.description || 'Real-time multi-tenant stock telemetry with hardware-grade query isolation.'}
-            </p>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-zinc-900 text-zinc-400 border border-zinc-800">
+              {currentTenant?.id}
+            </span>
           </div>
+          <p className="text-xs text-zinc-400 mt-1 max-w-2xl">
+            {currentTenant?.description || 'Tenant stock catalog and real-time inventory telemetry.'}
+          </p>
+        </div>
 
-          <div className="flex items-center gap-3">
-            <button
-              onClick={onOpenAddModal}
-              className="px-4 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-semibold text-sm transition shadow-lg shadow-cyan-500/20 flex items-center space-x-2"
-            >
-              <Box className="w-4 h-4" />
-              <span>Add Product</span>
-            </button>
-            <button
-              onClick={onNavigateToInventory}
-              className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-sm transition border border-slate-700 flex items-center space-x-2"
-            >
-              <span>View Catalog</span>
-              <ArrowUpRight className="w-4 h-4" />
-            </button>
-          </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={onOpenAddModal}
+            className="px-3 py-1.5 rounded-lg bg-zinc-100 hover:bg-white text-zinc-950 font-medium text-xs transition flex items-center space-x-1.5 shadow-sm"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Add Item</span>
+          </button>
+          <button
+            onClick={onNavigateToInventory}
+            className="px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-850 text-zinc-200 border border-zinc-800 font-medium text-xs transition flex items-center space-x-1.5"
+          >
+            <span>Catalog</span>
+            <ArrowUpRight className="w-3.5 h-3.5 text-zinc-400" />
+          </button>
         </div>
       </div>
 
-      {/* 5 Core Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      {/* 5 Neutral Stat Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         {/* Total Products */}
-        <div className="rounded-xl bg-slate-900/90 border border-slate-800 p-4 shadow-sm hover:border-slate-700 transition">
-          <div className="flex items-center justify-between text-slate-400 mb-2">
-            <span className="text-xs font-medium uppercase tracking-wider">Total SKUs</span>
-            <div className="w-8 h-8 rounded-lg bg-blue-950/80 text-blue-400 flex items-center justify-center border border-blue-900/50">
-              <Package className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="text-2xl font-bold text-white tracking-tight">
+        <div className="rounded-xl bg-zinc-900/60 border border-zinc-800/80 p-3.5">
+          <div className="text-[11px] font-mono uppercase tracking-wider text-zinc-400">Total SKUs</div>
+          <div className="text-2xl font-semibold text-zinc-100 mt-1 font-mono tracking-tight">
             {stats?.totalProducts ?? items.length}
           </div>
-          <div className="mt-1 text-xs text-slate-400 flex items-center space-x-1">
-            <span className="text-emerald-400 flex items-center">
-              <TrendingUp className="w-3 h-3 mr-0.5" /> 100%
-            </span>
-            <span>tenant-scoped</span>
-          </div>
+          <div className="mt-1 text-[11px] text-zinc-400">Across catalog</div>
         </div>
 
         {/* Total Stock */}
-        <div className="rounded-xl bg-slate-900/90 border border-slate-800 p-4 shadow-sm hover:border-slate-700 transition">
-          <div className="flex items-center justify-between text-slate-400 mb-2">
-            <span className="text-xs font-medium uppercase tracking-wider">Stock Units</span>
-            <div className="w-8 h-8 rounded-lg bg-indigo-950/80 text-indigo-400 flex items-center justify-center border border-indigo-900/50">
-              <Layers className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="text-2xl font-bold text-white tracking-tight">
+        <div className="rounded-xl bg-zinc-900/60 border border-zinc-800/80 p-3.5">
+          <div className="text-[11px] font-mono uppercase tracking-wider text-zinc-400">Stock Units</div>
+          <div className="text-2xl font-semibold text-zinc-100 mt-1 font-mono tracking-tight">
             {totalStockUnits.toLocaleString()}
           </div>
-          <div className="mt-1 text-xs text-slate-400">
-            Across {categoryStats.length} active categories
-          </div>
+          <div className="mt-1 text-[11px] text-zinc-400">{categoryStats.length} active categories</div>
         </div>
 
-        {/* Inventory Value */}
-        <div className="rounded-xl bg-slate-900/90 border border-slate-800 p-4 shadow-sm hover:border-slate-700 transition">
-          <div className="flex items-center justify-between text-slate-400 mb-2">
-            <span className="text-xs font-medium uppercase tracking-wider">Inventory Value</span>
-            <div className="w-8 h-8 rounded-lg bg-emerald-950/80 text-emerald-400 flex items-center justify-center border border-emerald-900/50">
-              <DollarSign className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="text-2xl font-bold text-emerald-400 tracking-tight">
+        {/* Valuation */}
+        <div className="rounded-xl bg-zinc-900/60 border border-zinc-800/80 p-3.5">
+          <div className="text-[11px] font-mono uppercase tracking-wider text-zinc-400">Valuation</div>
+          <div className="text-2xl font-semibold text-zinc-100 mt-1 font-mono tracking-tight">
             {formatCurrency(totalValuation)}
           </div>
-          <div className="mt-1 text-xs text-slate-400">
-            Current aggregate valuation
-          </div>
+          <div className="mt-1 text-[11px] text-zinc-400">Total asset value</div>
         </div>
 
         {/* Low Stock */}
-        <div className="rounded-xl bg-slate-900/90 border border-slate-800 p-4 shadow-sm hover:border-amber-900/50 transition">
-          <div className="flex items-center justify-between text-slate-400 mb-2">
-            <span className="text-xs font-medium uppercase tracking-wider">Low Stock</span>
-            <div className="w-8 h-8 rounded-lg bg-amber-950/80 text-amber-400 flex items-center justify-center border border-amber-900/50">
-              <AlertTriangle className="w-4 h-4" />
-            </div>
+        <div className="rounded-xl bg-zinc-900/60 border border-zinc-800/80 p-3.5">
+          <div className="text-[11px] font-mono uppercase tracking-wider text-zinc-400">Low Stock</div>
+          <div className="text-2xl font-semibold text-zinc-200 mt-1 font-mono tracking-tight flex items-center gap-2">
+            <span>{stats?.lowStockCount ?? lowStockItems.length}</span>
+            {(stats?.lowStockCount ?? lowStockItems.length) > 0 && (
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+            )}
           </div>
-          <div className="text-2xl font-bold text-amber-400 tracking-tight">
-            {stats?.lowStockCount ?? lowStockItems.length}
-          </div>
-          <div className="mt-1 text-xs text-amber-500/90 font-medium">
-            Requires restocking order
-          </div>
+          <div className="mt-1 text-[11px] text-zinc-400">At/below threshold</div>
         </div>
 
         {/* Out of Stock */}
-        <div className="rounded-xl bg-slate-900/90 border border-slate-800 p-4 shadow-sm hover:border-rose-900/50 transition">
-          <div className="flex items-center justify-between text-slate-400 mb-2">
-            <span className="text-xs font-medium uppercase tracking-wider">Out of Stock</span>
-            <div className="w-8 h-8 rounded-lg bg-rose-950/80 text-rose-400 flex items-center justify-center border border-rose-900/50">
-              <XCircle className="w-4 h-4" />
-            </div>
+        <div className="rounded-xl bg-zinc-900/60 border border-zinc-800/80 p-3.5 col-span-2 lg:col-span-1">
+          <div className="text-[11px] font-mono uppercase tracking-wider text-zinc-400">Out of Stock</div>
+          <div className="text-2xl font-semibold text-zinc-200 mt-1 font-mono tracking-tight flex items-center gap-2">
+            <span>{stats?.outOfStockCount ?? outOfStockItems.length}</span>
+            {(stats?.outOfStockCount ?? outOfStockItems.length) > 0 && (
+              <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
+            )}
           </div>
-          <div className="text-2xl font-bold text-rose-400 tracking-tight">
-            {stats?.outOfStockCount ?? outOfStockItems.length}
-          </div>
-          <div className="mt-1 text-xs text-rose-400/90 font-medium">
-            Zero stock on shelf
-          </div>
+          <div className="mt-1 text-[11px] text-zinc-400">0 units remaining</div>
         </div>
       </div>
 
-      {/* Middle Grid: Category Breakdown & Low Stock Alert Table */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Middle Section: Category Breakdown & Watchlist */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Category Breakdown */}
-        <div className="lg:col-span-1 rounded-2xl bg-slate-900 border border-slate-800 p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-white text-sm tracking-wide">Category Distribution</h3>
-            <span className="text-xs text-slate-400">{categoryStats.length} Categories</span>
+        <div className="lg:col-span-1 rounded-xl bg-zinc-900/60 border border-zinc-800/80 p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-xs font-semibold text-zinc-200 uppercase font-mono tracking-wider">
+              Category Distribution
+            </h3>
+            <span className="text-[11px] text-zinc-400">{categoryStats.length} Total</span>
           </div>
 
-          <div className="space-y-3.5">
+          <div className="space-y-3">
             {categoryStats.map((cat) => {
               const pct = totalStockUnits > 0 ? Math.round((cat.totalQty / totalStockUnits) * 100) : 0;
               return (
                 <div key={cat.name} className="space-y-1">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="font-medium text-slate-200">{cat.name}</span>
-                    <span className="text-slate-400 font-mono">{cat.totalQty} units ({pct}%)</span>
+                    <span className="text-zinc-300 font-medium">{cat.name}</span>
+                    <span className="text-zinc-400 font-mono text-[11px]">{cat.totalQty} ({pct}%)</span>
                   </div>
-                  <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
+                  <div className="w-full h-1.5 rounded bg-zinc-800 overflow-hidden">
                     <div
-                      className="h-full bg-gradient-to-r from-cyan-500 to-indigo-500 rounded-full"
+                      className="h-full bg-zinc-400 rounded"
                       style={{ width: `${pct}%` }}
                     />
                   </div>
@@ -213,56 +169,60 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               );
             })}
             {categoryStats.length === 0 && (
-              <div className="text-center py-6 text-xs text-slate-500">No items found for this tenant.</div>
+              <div className="text-center py-6 text-xs text-zinc-500">No items available.</div>
             )}
           </div>
         </div>
 
-        {/* Low / Critical Stock Watchlist */}
-        <div className="lg:col-span-2 rounded-2xl bg-slate-900 border border-slate-800 p-5">
-          <div className="flex items-center justify-between mb-4">
+        {/* Stock Watchlist Table */}
+        <div className="lg:col-span-2 rounded-xl bg-zinc-900/60 border border-zinc-800/80 p-4">
+          <div className="flex items-center justify-between mb-3">
             <div className="flex items-center space-x-2">
-              <h3 className="font-semibold text-white text-sm tracking-wide">Stock Attention Watchlist</h3>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-950 text-amber-400 border border-amber-800">
-                {lowStockItems.length + outOfStockItems.length} Critical
+              <h3 className="text-xs font-semibold text-zinc-200 uppercase font-mono tracking-wider">
+                Attention Watchlist
+              </h3>
+              <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-zinc-800 text-zinc-400">
+                {lowStockItems.length + outOfStockItems.length}
               </span>
             </div>
             <button
               onClick={onNavigateToInventory}
-              className="text-xs text-cyan-400 hover:text-cyan-300 font-medium transition"
+              className="text-xs text-zinc-400 hover:text-zinc-200 transition"
             >
-              View Full Table →
+              View all →
             </button>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="text-slate-400 border-b border-slate-800 font-mono uppercase text-[10px]">
+              <thead className="text-zinc-400 border-b border-zinc-800 font-mono text-[10px] uppercase">
                 <tr>
-                  <th className="pb-2">Product Name</th>
-                  <th className="pb-2">SKU</th>
-                  <th className="pb-2">Category</th>
-                  <th className="pb-2">Available</th>
-                  <th className="pb-2">Threshold</th>
-                  <th className="pb-2">Status</th>
+                  <th className="pb-2 font-medium">Product</th>
+                  <th className="pb-2 font-medium">SKU</th>
+                  <th className="pb-2 font-medium">Category</th>
+                  <th className="pb-2 font-medium">Qty</th>
+                  <th className="pb-2 font-medium">Min</th>
+                  <th className="pb-2 font-medium">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60">
+              <tbody className="divide-y divide-zinc-800/60 font-mono">
                 {[...outOfStockItems, ...lowStockItems].slice(0, 5).map((item) => (
-                  <tr key={item.id} className="hover:bg-slate-800/40 transition">
-                    <td className="py-2.5 font-medium text-slate-200">{item.name}</td>
-                    <td className="py-2.5 font-mono text-slate-400">{item.sku}</td>
-                    <td className="py-2.5 text-slate-400">{item.category}</td>
-                    <td className="py-2.5 font-bold font-mono text-white">{item.quantity}</td>
-                    <td className="py-2.5 font-mono text-slate-400">{item.lowStockThreshold}</td>
-                    <td className="py-2.5">
+                  <tr key={item.id} className="hover:bg-zinc-800/40 transition">
+                    <td className="py-2 text-zinc-200 font-sans font-medium">{item.name}</td>
+                    <td className="py-2 text-zinc-400 text-[11px]">{item.sku}</td>
+                    <td className="py-2 text-zinc-400 text-[11px] font-sans">{item.category}</td>
+                    <td className="py-2 font-semibold text-zinc-100">{item.quantity}</td>
+                    <td className="py-2 text-zinc-500">{item.lowStockThreshold}</td>
+                    <td className="py-2">
                       {item.quantity === 0 ? (
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-950 text-rose-400 border border-rose-800">
-                          OUT OF STOCK
+                        <span className="inline-flex items-center gap-1.5 text-[11px] text-zinc-400 font-sans">
+                          <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                          <span>Out of Stock</span>
                         </span>
                       ) : (
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-950 text-amber-400 border border-amber-800">
-                          LOW STOCK
+                        <span className="inline-flex items-center gap-1.5 text-[11px] text-zinc-400 font-sans">
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                          <span>Low Stock</span>
                         </span>
                       )}
                     </td>
@@ -270,8 +230,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 ))}
                 {lowStockItems.length === 0 && outOfStockItems.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="text-center py-6 text-slate-500">
-                      All products are adequately stocked!
+                    <td colSpan={6} className="text-center py-6 text-zinc-500 font-sans">
+                      All inventory is within normal threshold limits.
                     </td>
                   </tr>
                 )}
@@ -281,40 +241,33 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </div>
 
-      {/* Recent Activity / Transactions Section */}
-      <div className="rounded-2xl bg-slate-900 border border-slate-800 p-5">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-2">
-            <Activity className="w-4 h-4 text-cyan-400" />
-            <h3 className="font-semibold text-white text-sm tracking-wide">Recent Tenant Stock Transactions</h3>
-          </div>
-          <span className="text-xs text-slate-400 font-mono">Isolated for {currentTenant?.id}</span>
+      {/* Recent Activity */}
+      <div className="rounded-xl bg-zinc-900/60 border border-zinc-800/80 p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-xs font-semibold text-zinc-200 uppercase font-mono tracking-wider">
+            Recent Stock Activity
+          </h3>
+          <span className="text-[11px] text-zinc-500 font-mono">tenant: {currentTenant?.id}</span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2.5">
           {transactions.slice(0, 4).map((tx) => (
-            <div key={tx.id} className="p-3 rounded-xl bg-slate-950 border border-slate-800/80 text-xs">
+            <div key={tx.id} className="p-2.5 rounded-lg bg-zinc-950 border border-zinc-800/80 text-xs">
               <div className="flex items-center justify-between mb-1">
-                <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                  tx.type === 'IN' 
-                    ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
-                    : tx.type === 'OUT'
-                    ? 'bg-rose-950 text-rose-400 border border-rose-800'
-                    : 'bg-indigo-950 text-indigo-400 border border-indigo-800'
-                }`}>
+                <span className="text-[10px] font-mono uppercase text-zinc-400">
                   {tx.type} ({tx.quantity > 0 ? `+${tx.quantity}` : tx.quantity})
                 </span>
-                <span className="text-[10px] text-slate-500 font-mono">
+                <span className="text-[10px] text-zinc-500 font-mono">
                   {new Date(tx.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>
               </div>
-              <div className="font-medium text-slate-200 truncate mt-1">{tx.productName || 'Inventory SKU'}</div>
-              <div className="text-[11px] text-slate-400 truncate mt-0.5">{tx.note || 'Manual adjustment'}</div>
+              <div className="font-medium text-zinc-200 truncate">{tx.productName || 'Item'}</div>
+              <div className="text-[11px] text-zinc-500 truncate mt-0.5">{tx.note || 'Adjustment'}</div>
             </div>
           ))}
           {transactions.length === 0 && (
-            <div className="col-span-4 text-center py-6 text-xs text-slate-500">
-              No recent transactions recorded for this tenant.
+            <div className="col-span-4 text-center py-6 text-xs text-zinc-500">
+              No recent activity recorded for this tenant.
             </div>
           )}
         </div>
