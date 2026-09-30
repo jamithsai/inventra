@@ -74,19 +74,19 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
-      <div className="w-full max-w-lg rounded-lg bg-zinc-900 border border-zinc-800 shadow-2xl p-5 space-y-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-150">
+      <div className="w-full max-w-lg rounded-lg bg-white border border-slate-200 shadow-2xl p-6 space-y-4">
         {/* Modal Header */}
-        <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
+        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
           <div className="flex items-center space-x-2.5">
-            <div className="w-7 h-7 rounded bg-zinc-950 text-zinc-300 flex items-center justify-center border border-zinc-800">
-              <Box className="w-3.5 h-3.5" />
+            <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center border border-slate-200">
+              <Box className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="font-semibold text-zinc-100 text-sm">
+              <h3 className="font-bold text-slate-900 text-sm">
                 {editingItem ? 'Edit Product' : 'Add New Product'}
               </h3>
-              <p className="text-[11px] text-zinc-400 font-mono">
+              <p className="text-[11px] text-slate-500 font-mono">
                 Tenant: {currentTenant?.name} ({currentTenant?.id})
               </p>
             </div>
@@ -94,72 +94,72 @@ export const ProductModal: React.FC<ProductModalProps> = ({
 
           <button
             onClick={onClose}
-            className="p-1 rounded text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition"
+            className="p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {error && (
-          <div className="p-2.5 rounded bg-zinc-950 border border-red-900/50 text-red-400 text-xs flex items-center space-x-2 font-mono">
-            <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+          <div className="p-3 rounded-md bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center space-x-2 font-mono">
+            <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{error}</span>
           </div>
         )}
 
         {/* Form Fields */}
-        <form onSubmit={handleSubmit} className="space-y-3.5">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-zinc-300 mb-1">Product Name *</label>
+            <label className="block text-xs font-medium text-slate-700 mb-1">Product Name *</label>
             <input
               type="text"
               required
               placeholder="e.g. Enterprise Workstation Pro"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-3 py-1.5 rounded-md bg-zinc-950 border border-zinc-800 text-xs text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-zinc-500"
+              className="w-full px-3 py-1.5 rounded-md bg-slate-50 border border-slate-200 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-slate-800 focus:bg-white"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-zinc-300 mb-1">SKU Identifier *</label>
+              <label className="block text-xs font-medium text-slate-700 mb-1">SKU Identifier *</label>
               <input
                 type="text"
                 required
                 placeholder="SKU-1001"
                 value={sku}
                 onChange={(e) => setSku(e.target.value)}
-                className="w-full px-3 py-1.5 rounded-md bg-zinc-950 border border-zinc-800 text-xs font-mono text-zinc-200 focus:outline-none focus:border-zinc-500"
+                className="w-full px-3 py-1.5 rounded-md bg-slate-50 border border-slate-200 text-xs font-mono text-slate-800 focus:outline-none focus:border-slate-800 focus:bg-white"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-zinc-300 mb-1">Category *</label>
+              <label className="block text-xs font-medium text-slate-700 mb-1">Category *</label>
               <input
                 type="text"
                 required
                 placeholder="e.g. Laptops, Audio, Office"
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className="w-full px-3 py-1.5 rounded-md bg-zinc-950 border border-zinc-800 text-xs text-zinc-100 focus:outline-none focus:border-zinc-500"
+                className="w-full px-3 py-1.5 rounded-md bg-slate-50 border border-slate-200 text-xs text-slate-800 focus:outline-none focus:border-slate-800 focus:bg-white"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs font-medium text-zinc-300 mb-1">Initial Stock</label>
+              <label className="block text-xs font-medium text-slate-700 mb-1">Initial Stock</label>
               <input
                 type="number"
                 min="0"
                 required
                 value={quantity}
                 onChange={(e) => setQuantity(Number(e.target.value))}
-                className="w-full px-3 py-1.5 rounded-md bg-zinc-950 border border-zinc-800 text-xs font-mono text-zinc-100 focus:outline-none focus:border-zinc-500"
+                className="w-full px-3 py-1.5 rounded-md bg-slate-50 border border-slate-200 text-xs font-mono text-slate-800 focus:outline-none focus:border-slate-800 focus:bg-white"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-zinc-300 mb-1">Unit Price ($)</label>
+              <label className="block text-xs font-medium text-slate-700 mb-1">Unit Price ($)</label>
               <input
                 type="number"
                 min="0.01"
@@ -167,46 +167,46 @@ export const ProductModal: React.FC<ProductModalProps> = ({
                 required
                 value={price}
                 onChange={(e) => setPrice(Number(e.target.value))}
-                className="w-full px-3 py-1.5 rounded-md bg-zinc-950 border border-zinc-800 text-xs font-mono text-zinc-100 focus:outline-none focus:border-zinc-500"
+                className="w-full px-3 py-1.5 rounded-md bg-slate-50 border border-slate-200 text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-slate-800 focus:bg-white"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-zinc-300 mb-1">Low Threshold</label>
+              <label className="block text-xs font-medium text-slate-700 mb-1">Low Threshold</label>
               <input
                 type="number"
                 min="0"
                 required
                 value={lowStockThreshold}
                 onChange={(e) => setLowStockThreshold(Number(e.target.value))}
-                className="w-full px-3 py-1.5 rounded-md bg-zinc-950 border border-zinc-800 text-xs font-mono text-zinc-300 focus:outline-none focus:border-zinc-500"
+                className="w-full px-3 py-1.5 rounded-md bg-slate-50 border border-slate-200 text-xs font-mono text-slate-800 focus:outline-none focus:border-slate-800 focus:bg-white"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-zinc-300 mb-1">Image URL / S3 Asset URL</label>
+            <label className="block text-xs font-medium text-slate-700 mb-1">Image URL / S3 Asset URL</label>
             <input
               type="url"
               placeholder="https://images.unsplash.com/... or S3 URL"
               value={imageUrl}
               onChange={(e) => setImageUrl(e.target.value)}
-              className="w-full px-3 py-1.5 rounded-md bg-zinc-950 border border-zinc-800 text-xs text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-zinc-500"
+              className="w-full px-3 py-1.5 rounded-md bg-slate-50 border border-slate-200 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-slate-800 focus:bg-white"
             />
           </div>
 
           {/* Modal Actions */}
-          <div className="flex items-center justify-end space-x-2 pt-3 border-t border-zinc-800">
+          <div className="flex items-center justify-end space-x-2.5 pt-3 border-t border-slate-100">
             <button
               type="button"
               onClick={onClose}
-              className="px-3 py-1.5 rounded-md bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs transition"
+              className="px-3.5 py-1.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium transition"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-4 py-1.5 rounded-md bg-zinc-100 hover:bg-white disabled:opacity-40 text-zinc-900 font-medium text-xs transition shadow-sm"
+              className="px-4 py-1.5 rounded-md bg-slate-900 hover:bg-slate-800 disabled:opacity-40 text-white font-medium text-xs transition shadow-sm"
             >
               {isSubmitting ? 'Saving...' : editingItem ? 'Save Changes' : 'Create Product'}
             </button>

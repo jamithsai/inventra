@@ -3,7 +3,6 @@ import {
   ShieldAlert, 
   Play, 
   CheckCircle2, 
-  XCircle, 
   Lock, 
   Terminal, 
   Bug, 
@@ -269,17 +268,17 @@ export const TenantIsolationDemoView: React.FC<TenantIsolationDemoViewProps> = (
   return (
     <div className="space-y-6">
       {/* Top Banner */}
-      <div className="rounded-lg bg-zinc-900 border border-zinc-800 p-5">
+      <div className="rounded-lg bg-white border border-slate-200 p-6 shadow-sm">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center space-x-2 text-zinc-400 text-xs font-mono font-medium uppercase tracking-wider mb-1">
-              <ShieldAlert className="w-3.5 h-3.5" />
+            <div className="flex items-center space-x-2 text-slate-500 text-xs font-mono font-medium uppercase tracking-wider mb-1">
+              <ShieldAlert className="w-4 h-4 text-emerald-600" />
               <span>Security Validation Benchmark</span>
             </div>
-            <h1 className="text-xl font-semibold text-zinc-100 tracking-tight">
+            <h1 className="text-xl font-bold text-slate-900 tracking-tight">
               Tenant Isolation Verification
             </h1>
-            <p className="text-xs text-zinc-400 mt-1 max-w-2xl leading-relaxed">
+            <p className="text-xs text-slate-500 mt-1 max-w-2xl leading-relaxed">
               Verify multi-tenant data boundaries by executing real penetration tests against EF Core query filters, tenant middleware, and S3 file keys.
             </p>
           </div>
@@ -287,22 +286,22 @@ export const TenantIsolationDemoView: React.FC<TenantIsolationDemoViewProps> = (
           <button
             onClick={handleRunAllAttacks}
             disabled={runningTestId !== null}
-            className="px-4 py-2 rounded-md bg-zinc-100 hover:bg-white disabled:opacity-40 text-zinc-900 font-medium text-xs transition shadow-sm flex items-center space-x-2 shrink-0 self-start md:self-auto"
+            className="px-4 py-2 rounded-md bg-slate-900 hover:bg-slate-800 disabled:opacity-40 text-white font-medium text-xs transition shadow-sm flex items-center space-x-2 shrink-0 self-start md:self-auto"
           >
-            <Play className="w-3.5 h-3.5 fill-zinc-900" />
+            <Play className="w-3.5 h-3.5 fill-white" />
             <span>Run All 5 Test Scenarios</span>
           </button>
         </div>
       </div>
 
       {/* Navigation Tabs */}
-      <div className="flex space-x-1.5 border-b border-zinc-800 pb-2">
+      <div className="flex space-x-2 border-b border-slate-200 pb-2">
         <button
           onClick={() => setActiveTab('attacks')}
           className={`px-3 py-1.5 rounded-md text-xs font-medium transition ${
             activeTab === 'attacks'
-              ? 'bg-zinc-800 text-zinc-100 border border-zinc-700'
-              : 'text-zinc-400 hover:text-zinc-200'
+              ? 'bg-slate-900 text-white shadow-xs'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
           }`}
         >
           Attack Scenarios
@@ -311,8 +310,8 @@ export const TenantIsolationDemoView: React.FC<TenantIsolationDemoViewProps> = (
           onClick={() => setActiveTab('matrix')}
           className={`px-3 py-1.5 rounded-md text-xs font-medium transition ${
             activeTab === 'matrix'
-              ? 'bg-zinc-800 text-zinc-100 border border-zinc-700'
-              : 'text-zinc-400 hover:text-zinc-200'
+              ? 'bg-slate-900 text-white shadow-xs'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
           }`}
         >
           Authorization Matrix
@@ -321,8 +320,8 @@ export const TenantIsolationDemoView: React.FC<TenantIsolationDemoViewProps> = (
           onClick={() => setActiveTab('layers')}
           className={`px-3 py-1.5 rounded-md text-xs font-medium transition ${
             activeTab === 'layers'
-              ? 'bg-zinc-800 text-zinc-100 border border-zinc-700'
-              : 'text-zinc-400 hover:text-zinc-200'
+              ? 'bg-slate-900 text-white shadow-xs'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
           }`}
         >
           Defense Layers
@@ -333,9 +332,9 @@ export const TenantIsolationDemoView: React.FC<TenantIsolationDemoViewProps> = (
       {activeTab === 'attacks' && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Left: Scenarios list */}
-          <div className="lg:col-span-7 space-y-3">
-            <h3 className="font-semibold text-zinc-200 text-xs flex items-center space-x-2">
-              <Bug className="w-3.5 h-3.5 text-zinc-400" />
+          <div className="lg:col-span-7 space-y-3.5">
+            <h3 className="font-semibold text-slate-800 text-xs flex items-center space-x-2">
+              <Bug className="w-3.5 h-3.5 text-slate-600" />
               <span>Available Isolation Bypass Tests</span>
             </h3>
 
@@ -346,20 +345,20 @@ export const TenantIsolationDemoView: React.FC<TenantIsolationDemoViewProps> = (
               return (
                 <div
                   key={sc.id}
-                  className="p-3.5 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition space-y-2.5"
+                  className="p-4 rounded-lg bg-white border border-slate-200 shadow-sm space-y-3"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <div className="font-medium text-xs text-zinc-200 flex items-center gap-2">
+                      <div className="font-semibold text-xs text-slate-900 flex items-center gap-2">
                         <span>{sc.title}</span>
                       </div>
-                      <p className="text-xs text-zinc-400 mt-0.5">{sc.description}</p>
+                      <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">{sc.description}</p>
                     </div>
 
                     <button
                       onClick={() => handleRunAttack(sc)}
                       disabled={isRunning}
-                      className="px-2.5 py-1 rounded bg-zinc-950 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 text-xs font-mono flex items-center space-x-1.5 shrink-0 transition"
+                      className="px-3 py-1.5 rounded bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 text-xs font-mono flex items-center space-x-1.5 shrink-0 transition shadow-xs"
                     >
                       {isRunning ? (
                         <>
@@ -368,7 +367,7 @@ export const TenantIsolationDemoView: React.FC<TenantIsolationDemoViewProps> = (
                         </>
                       ) : (
                         <>
-                          <Play className="w-2.5 h-2.5 fill-zinc-300" />
+                          <Play className="w-2.5 h-2.5 fill-slate-700" />
                           <span>Simulate</span>
                         </>
                       )}
@@ -377,10 +376,10 @@ export const TenantIsolationDemoView: React.FC<TenantIsolationDemoViewProps> = (
 
                   {/* Metadata Tags */}
                   <div className="flex flex-wrap gap-2 text-[10px] font-mono">
-                    <span className="px-1.5 py-0.5 rounded bg-zinc-950 text-zinc-400 border border-zinc-800">
+                    <span className="px-2 py-0.5 rounded bg-slate-50 text-slate-600 border border-slate-200">
                       Layer: {sc.defenseLayer}
                     </span>
-                    <span className="px-1.5 py-0.5 rounded bg-zinc-950 text-zinc-300 border border-zinc-800">
+                    <span className="px-2 py-0.5 rounded bg-slate-50 text-slate-800 border border-slate-200 font-semibold">
                       Expected: {sc.expectedStatus}
                     </span>
                   </div>
@@ -388,24 +387,28 @@ export const TenantIsolationDemoView: React.FC<TenantIsolationDemoViewProps> = (
                   {/* Result Box if Run */}
                   {result && (
                     <div
-                      className="p-2.5 rounded bg-zinc-950 border border-zinc-800 text-xs font-mono space-y-1"
+                      className={`p-3 rounded-md border text-xs font-mono space-y-1 ${
+                        result.passed
+                          ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                          : 'bg-rose-50 text-rose-800 border-rose-200'
+                      }`}
                     >
-                      <div className="flex items-center justify-between font-medium">
+                      <div className="flex items-center justify-between font-bold">
                         <span className="flex items-center space-x-1.5">
                           <span
                             className={`w-2 h-2 rounded-full ${
-                              result.passed ? 'bg-zinc-200' : 'bg-red-400'
+                              result.passed ? 'bg-emerald-600' : 'bg-rose-600'
                             }`}
                           />
-                          <span className={result.passed ? 'text-zinc-200' : 'text-red-400'}>
+                          <span>
                             {result.passed ? 'ATTACK BLOCKED (DEFENSE PASSED)' : 'VULNERABILITY DETECTED'}
                           </span>
                         </span>
-                        <span className="px-1.5 py-0.2 rounded bg-zinc-900 text-zinc-300 border border-zinc-800 text-[10px]">
+                        <span className="px-1.5 py-0.2 rounded bg-white text-slate-800 border border-slate-200 text-[10px]">
                           HTTP {result.actualStatus}
                         </span>
                       </div>
-                      <div className="text-[11px] leading-relaxed text-zinc-400">{result.message}</div>
+                      <div className="text-[11px] leading-relaxed mt-1">{result.message}</div>
                     </div>
                   )}
                 </div>
@@ -414,34 +417,34 @@ export const TenantIsolationDemoView: React.FC<TenantIsolationDemoViewProps> = (
           </div>
 
           {/* Right: Real-Time Execution Console */}
-          <div className="lg:col-span-5 rounded-lg bg-zinc-950 border border-zinc-800 p-3.5 font-mono text-xs shadow-xl flex flex-col h-[540px]">
-            <div className="flex items-center justify-between pb-2.5 border-b border-zinc-800 text-zinc-400 text-[11px]">
+          <div className="lg:col-span-5 rounded-lg bg-slate-900 border border-slate-800 p-4 font-mono text-xs shadow-xl flex flex-col h-[560px]">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800 text-slate-400 text-[11px]">
               <div className="flex items-center space-x-2">
-                <Terminal className="w-3.5 h-3.5 text-zinc-400" />
-                <span className="font-semibold text-zinc-200">Security Audit Stream</span>
+                <Terminal className="w-3.5 h-3.5 text-slate-400" />
+                <span className="font-semibold text-white">Security Audit Stream</span>
               </div>
-              <span className="text-[10px] text-zinc-400 flex items-center gap-1.5 font-mono">
-                <span className="w-1.5 h-1.5 rounded-full bg-zinc-200 animate-pulse" />
+              <span className="text-[10px] text-emerald-400 flex items-center gap-1.5 font-mono">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                 Active Monitor
               </span>
             </div>
 
-            <div className="flex-1 overflow-y-auto py-2.5 space-y-2.5 text-[11px]">
-              <div className="text-zinc-500">// Security tests executed in real-time against ASP.NET Core API:</div>
+            <div className="flex-1 overflow-y-auto py-3 space-y-3 text-[11px]">
+              <div className="text-slate-500">// Security tests executed in real-time against ASP.NET Core API:</div>
 
               {testResults.map((r, i) => (
-                <div key={i} className="p-2 rounded bg-zinc-900 border border-zinc-800 space-y-1">
-                  <div className="text-zinc-400 text-[10px]">
+                <div key={i} className="p-2.5 rounded bg-slate-950 border border-slate-800 space-y-1">
+                  <div className="text-slate-400 text-[10px]">
                     [{new Date(r.timestamp).toLocaleTimeString()}] {r.method} {r.endpoint}
                   </div>
-                  <div className="text-zinc-300 text-[10px]">
+                  <div className="text-slate-300 text-[10px]">
                     Headers: &#123; "X-Tenant-ID": "{r.requestedTenantId}", "X-User-ID": "{r.authenticatedUserId}" &#125;
                   </div>
-                  <div className={r.passed ? 'text-zinc-200' : 'text-red-400'}>
+                  <div className={r.passed ? 'text-emerald-400 font-semibold' : 'text-rose-400 font-semibold'}>
                     STATUS: {r.actualStatus} (Expected {r.expectedStatus}) → {r.passed ? 'DEFENSE SUCCESSFUL' : 'DEFENSE FAILED'}
                   </div>
                   {r.responsePayload && (
-                    <pre className="text-[10px] text-zinc-400 bg-zinc-950 p-1.5 rounded border border-zinc-800 overflow-x-auto">
+                    <pre className="text-[10px] text-slate-400 bg-slate-900/60 p-1.5 rounded border border-slate-800 overflow-x-auto">
                       {JSON.stringify(r.responsePayload, null, 2)}
                     </pre>
                   )}
@@ -449,15 +452,15 @@ export const TenantIsolationDemoView: React.FC<TenantIsolationDemoViewProps> = (
               ))}
 
               {testResults.length === 0 && (
-                <div className="text-center py-20 text-zinc-600">
+                <div className="text-center py-20 text-slate-500">
                   Ready to simulate attacks. Click "Simulate" on any test to inspect the server response.
                 </div>
               )}
             </div>
 
-            <div className="pt-2 border-t border-zinc-800 text-[10px] text-zinc-500 flex justify-between font-mono">
+            <div className="pt-2 border-t border-slate-800 text-[10px] text-slate-400 flex justify-between font-mono">
               <span>Tests Completed: {testResults.length}/{attackScenarios.length}</span>
-              <span className="text-zinc-200 font-medium">
+              <span className="text-emerald-400 font-medium">
                 Passed: {testResults.filter((r) => r.passed).length}
               </span>
             </div>
@@ -467,17 +470,17 @@ export const TenantIsolationDemoView: React.FC<TenantIsolationDemoViewProps> = (
 
       {/* TAB 2: Authorization Matrix */}
       {activeTab === 'matrix' && (
-        <div className="rounded-lg bg-zinc-900 border border-zinc-800 p-4 space-y-4">
+        <div className="rounded-lg bg-white border border-slate-200 p-5 shadow-sm space-y-4">
           <div>
-            <h3 className="font-semibold text-zinc-200 text-xs">Tenant Membership & Role Matrix</h3>
-            <p className="text-xs text-zinc-400 mt-0.5">
+            <h3 className="font-semibold text-slate-900 text-xs">Tenant Membership & Role Matrix</h3>
+            <p className="text-xs text-slate-500 mt-0.5">
               Users only possess cryptographic membership records for specific tenants. Changing headers alone cannot bypass server-side validation.
             </p>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-zinc-950 text-zinc-400 uppercase font-mono text-[10px] border-b border-zinc-800">
+              <thead className="bg-slate-50 text-slate-500 uppercase font-mono text-[10px] border-b border-slate-200">
                 <tr>
                   <th className="p-3">Tenant Name</th>
                   <th className="p-3">Tenant ID (X-Tenant-ID)</th>
@@ -485,29 +488,29 @@ export const TenantIsolationDemoView: React.FC<TenantIsolationDemoViewProps> = (
                   <th className="p-3">Server Policy Result</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-800/60">
+              <tbody className="divide-y divide-slate-100">
                 {allTenants.map((t) => {
                   const isAuth = currentUser?.authorizedTenants.includes(t.id);
                   const isCurrent = currentTenant?.id === t.id;
                   return (
-                    <tr key={t.id} className={isCurrent ? 'bg-zinc-800/30' : ''}>
-                      <td className="p-3 font-medium text-zinc-200 flex items-center space-x-2">
+                    <tr key={t.id} className={isCurrent ? 'bg-slate-50' : ''}>
+                      <td className="p-3 font-semibold text-slate-900 flex items-center space-x-2">
                         <span>{t.name}</span>
                         {isCurrent && (
-                          <span className="px-1.5 py-0.2 rounded text-[10px] bg-zinc-800 text-zinc-200 border border-zinc-700 font-mono">
+                          <span className="px-1.5 py-0.2 rounded text-[10px] bg-slate-900 text-white font-mono">
                             CURRENT
                           </span>
                         )}
                       </td>
-                      <td className="p-3 font-mono text-zinc-300">{t.id}</td>
-                      <td className="p-3 text-zinc-400">
+                      <td className="p-3 font-mono text-slate-700">{t.id}</td>
+                      <td className="p-3 text-slate-600">
                         {isAuth ? (
-                          <span className="inline-flex items-center space-x-1 text-zinc-200">
-                            <CheckCircle2 className="w-3.5 h-3.5 text-zinc-400" />
+                          <span className="inline-flex items-center space-x-1 text-emerald-700 font-medium">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                             <span>Membership Verified</span>
                           </span>
                         ) : (
-                          <span className="inline-flex items-center space-x-1 text-zinc-500">
+                          <span className="inline-flex items-center space-x-1 text-slate-400">
                             <Lock className="w-3.5 h-3.5" />
                             <span>No Membership</span>
                           </span>
@@ -515,11 +518,11 @@ export const TenantIsolationDemoView: React.FC<TenantIsolationDemoViewProps> = (
                       </td>
                       <td className="p-3">
                         {isAuth ? (
-                          <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-zinc-950 text-zinc-300 border border-zinc-800">
+                          <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-50 text-emerald-700 border border-emerald-200 font-medium">
                             200 OK (ALLOWED)
                           </span>
                         ) : (
-                          <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-zinc-950 text-zinc-400 border border-zinc-800">
+                          <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-rose-50 text-rose-700 border border-rose-200 font-medium">
                             403 FORBIDDEN (REJECTED)
                           </span>
                         )}
@@ -536,46 +539,46 @@ export const TenantIsolationDemoView: React.FC<TenantIsolationDemoViewProps> = (
       {/* TAB 3: Defense Layers */}
       {activeTab === 'layers' && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="p-4 rounded-lg bg-zinc-900 border border-zinc-800 space-y-2">
-            <div className="w-6 h-6 rounded bg-zinc-950 border border-zinc-800 text-zinc-300 font-mono text-xs flex items-center justify-center font-semibold">
+          <div className="p-4 rounded-lg bg-white border border-slate-200 shadow-sm space-y-2">
+            <div className="w-6 h-6 rounded bg-slate-100 border border-slate-200 text-slate-700 font-mono text-xs flex items-center justify-center font-bold">
               1
             </div>
-            <div className="font-medium text-xs text-zinc-200">HTTP Request Header</div>
-            <div className="text-[11px] font-mono text-zinc-400">X-Tenant-ID: acme-retail</div>
-            <p className="text-xs text-zinc-400 leading-relaxed">
+            <div className="font-semibold text-xs text-slate-900">HTTP Request Header</div>
+            <div className="text-[11px] font-mono text-slate-600">X-Tenant-ID: acme-retail</div>
+            <p className="text-xs text-slate-500 leading-relaxed">
               Untrusted client claim transmitted with request. Never trusted blindly by backend layers.
             </p>
           </div>
 
-          <div className="p-4 rounded-lg bg-zinc-900 border border-zinc-800 space-y-2">
-            <div className="w-6 h-6 rounded bg-zinc-950 border border-zinc-800 text-zinc-300 font-mono text-xs flex items-center justify-center font-semibold">
+          <div className="p-4 rounded-lg bg-white border border-slate-200 shadow-sm space-y-2">
+            <div className="w-6 h-6 rounded bg-slate-100 border border-slate-200 text-slate-700 font-mono text-xs flex items-center justify-center font-bold">
               2
             </div>
-            <div className="font-medium text-xs text-zinc-200">Tenant Middleware</div>
-            <div className="text-[11px] font-mono text-zinc-400">TenantResolutionMiddleware</div>
-            <p className="text-xs text-zinc-400 leading-relaxed">
-              Validates tenant existence, checks authenticated user membership, sets scoped <code className="text-zinc-200">ITenantContext</code>.
+            <div className="font-semibold text-xs text-slate-900">Tenant Middleware</div>
+            <div className="text-[11px] font-mono text-slate-600">TenantResolutionMiddleware</div>
+            <p className="text-xs text-slate-500 leading-relaxed">
+              Validates tenant existence, checks authenticated user membership, sets scoped <code className="text-slate-800 font-medium">ITenantContext</code>.
             </p>
           </div>
 
-          <div className="p-4 rounded-lg bg-zinc-900 border border-zinc-800 space-y-2">
-            <div className="w-6 h-6 rounded bg-zinc-950 border border-zinc-800 text-zinc-300 font-mono text-xs flex items-center justify-center font-semibold">
+          <div className="p-4 rounded-lg bg-white border border-slate-200 shadow-sm space-y-2">
+            <div className="w-6 h-6 rounded bg-slate-100 border border-slate-200 text-slate-700 font-mono text-xs flex items-center justify-center font-bold">
               3
             </div>
-            <div className="font-medium text-xs text-zinc-200">EF Core Query Filters</div>
-            <div className="text-[11px] font-mono text-zinc-400">e.TenantId == CurrentTenantId</div>
-            <p className="text-xs text-zinc-400 leading-relaxed">
+            <div className="font-semibold text-xs text-slate-900">EF Core Query Filters</div>
+            <div className="text-[11px] font-mono text-slate-600">e.TenantId == CurrentTenantId</div>
+            <p className="text-xs text-slate-500 leading-relaxed">
               Engineered into DbContext model creation. Automatically appends WHERE clause to all SELECT, UPDATE, DELETE queries.
             </p>
           </div>
 
-          <div className="p-4 rounded-lg bg-zinc-900 border border-zinc-800 space-y-2">
-            <div className="w-6 h-6 rounded bg-zinc-950 border border-zinc-800 text-zinc-300 font-mono text-xs flex items-center justify-center font-semibold">
+          <div className="p-4 rounded-lg bg-white border border-slate-200 shadow-sm space-y-2">
+            <div className="w-6 h-6 rounded bg-slate-100 border border-slate-200 text-slate-700 font-mono text-xs flex items-center justify-center font-bold">
               4
             </div>
-            <div className="font-medium text-xs text-zinc-200">S3 Storage Key Prefix</div>
-            <div className="text-[11px] font-mono text-zinc-400">/tenants/{'{tenantId}'}/...</div>
-            <p className="text-xs text-zinc-400 leading-relaxed">
+            <div className="font-semibold text-xs text-slate-900">S3 Storage Key Prefix</div>
+            <div className="text-[11px] font-mono text-slate-600">/tenants/{'{tenantId}'}/...</div>
+            <p className="text-xs text-slate-500 leading-relaxed">
               S3 keys are assembled strictly using the resolved tenant context, ensuring physical separation of customer assets.
             </p>
           </div>
