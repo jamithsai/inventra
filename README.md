@@ -1,6 +1,6 @@
-# NEXUS MULTI-TENANT INVENTORY PLATFORM
+# INVENTRA MULTI-TENANT INVENTORY PLATFORM
 
-[![ASP.NET Core 8](https://img.shields.io/badge/ASP.NET%20Core-8.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
+[![ASP.NET Core 9](https://img.shields.io/badge/ASP.NET%20Core-9.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
 [![EF Core Query Filters](https://img.shields.io/badge/EF%20Core-Global%20Query%20Filters-68217A)](https://learn.microsoft.com/en-us/ef/core/)
 [![React 19](https://img.shields.io/badge/Frontend-React%20%2B%20Vite%20%2B%20Tailwind-61DAFB?logo=react)](https://react.dev/)
 [![AWS S3 Partitioned](https://img.shields.io/badge/Storage-AWS%20S3%20Tenant%20Isolated-FF9900?logo=amazons3)](https://aws.amazon.com/s3/)
@@ -10,7 +10,7 @@
 
 ## 📌 Executive Summary
 
-**Nexus Multi-Tenant Inventory Platform** is a production-grade SaaS architecture designed to host multiple independent organizations (*Acme Retail*, *Nova Electronics*, *Zenith Supplies*) on a shared infrastructure while enforcing **hardware-grade mathematical isolation** of data and file storage across all application layers.
+**Inventra Multi-Tenant Inventory Platform** is a production-grade SaaS architecture designed to host multiple independent organizations (*Acme Retail*, *Nova Electronics*, *Zenith Supplies*) on a shared infrastructure while enforcing **hardware-grade mathematical isolation** of data and file storage across all application layers.
 
 ### Core Tenet
 > **"Never trust client claims alone."**
@@ -72,7 +72,7 @@ flowchart TD
 | **2. Scoped Context** | `ITenantContext` / `TenantContext` | Thread-safe per-request DI container lifetime holding verified `CurrentTenantId`. |
 | **3. EF Core Data Access** | `.HasQueryFilter(e => e.TenantId == _tenantContext.CurrentTenantId)` | Automatically appends `WHERE TenantId = @currentTenant` to all `SELECT`, `UPDATE`, `DELETE` queries. |
 | **4. Database Storage** | `ITenantEntity` & Composite Unique Indexes `(TenantId, SKU)` | Hard multitenant relational schemas preventing cross-tenant collisions. |
-| **5. File Storage (AWS S3)** | `IFileStorageService` + `tenants/{tenantId}/products/{fileName}` | S3 key paths derived strictly from server tenant context. No client-supplied path traversal possible. |
+| **5. File Storage (AWS S3)** | `IFileStorageService` + `tenants/{tenantId}/products/{fileName}` | S3 key paths derived strictly from server tenant context. No client-supplied path traversal possible. Cascade cleanup on product delete. |
 | **6. Frontend Dashboard** | Complete cache invalidation & re-fetch on tenant switch | UI reflects only authorized tenant data; offers live interactive security attack bench for hackathon judges. |
 
 ---
@@ -97,7 +97,7 @@ The platform seeds 3 distinct organizations and 4 user personas with varying per
 ## 🚀 Quick Start Guide
 
 ### Prerequisites
-- [.NET 8.0 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
+- [.NET 8.0 or 9.0 SDK](https://dotnet.microsoft.com/)
 - [Node.js v18+ & npm](https://nodejs.org/)
 
 ### 1. Run the Backend API
@@ -120,23 +120,11 @@ npm run dev
 
 ## 🧪 Running Automated Security Verification Tests
 
-Execute the comprehensive xUnit test suite covering all 9 tenant isolation invariants:
+Execute the comprehensive xUnit test suite covering all tenant isolation and cascade cleanup invariants:
 
 ```powershell
-cd backend/MultiTenantInventory.Tests
-dotnet test --logger "console;verbosity=detailed"
+dotnet test backend/MultiTenantInventory.Tests/MultiTenantInventory.Tests.csproj
 ```
-
-### Verified Test Cases
-1. `Requirement1_TenantA_CanAccessTenantA_Inventory` (PASS)
-2. `Requirement2_TenantA_CannotAccessTenantB_InventoryList` (PASS)
-3. `Requirement3_TenantA_CannotAccessTenantB_ItemById_IDORBlocked` (PASS)
-4. `Requirement4_TenantA_CannotUpdateTenantB_Item` (PASS)
-5. `Requirement5_TenantA_CannotDeleteTenantB_Item` (PASS)
-6. `Requirement6_Unauthorized_XTenantId_Header_IsRejectedByMiddleware` (PASS)
-7. `Requirement7_Missing_XTenantId_Header_ReturnsBadRequest` (PASS)
-8. `Requirement8_TenantA_CannotAccessTenantB_S3Files` (PASS)
-9. `Requirement9_TenantSpecific_AuditLogs_AreIsolated` (PASS)
 
 ---
 
@@ -147,8 +135,8 @@ Follow these steps to demonstrate the security and feature capabilities:
 1. **Step 1 - User Persona Inspection:** In the top-right navbar, inspect the active user persona **Admin User** (Authorized for *Acme Retail* and *Nova Electronics*).
 2. **Step 2 - Acme Retail Inventory:** View the active inventory for *Acme Retail* (iPhone 15, Dell XPS, etc.) and note the total inventory valuation.
 3. **Step 3 - Zero-Trust Tenant Switching:** Switch the tenant dropdown to **Nova Electronics**. Notice that the catalog instantly loads microcontroller inventory (ESP32, Raspberry Pi) via network request with `X-Tenant-ID: nova-electronics`.
-4. **Step 4 - Live Security Attack Bench:** Open the **"Tenant Isolation Demo"** from the left sidebar.
+4. **Step 4 - Live Security Attack Bench:** Open the **"Isolation Bench"** from the left sidebar.
 5. **Step 5 - Execute IDOR Attack Simulation:** Click **"Simulate"** on *1. Cross-Tenant IDOR*. Observe how accessing another tenant's product ID returns `404 Not Found / 403 Forbidden` due to EF Core Global Query Filters.
 6. **Step 6 - Execute Header Spoofing Attack:** Click **"Simulate"** on *2. Header Tampering*. The system attempts to inject `X-Tenant-ID: zenith-supplies` for the Admin User. Observe the `403 Forbidden` rejection and real-time security violation log.
-7. **Step 7 - S3 Tenant File Storage:** Navigate to **"S3 File Storage"**. Upload a file and inspect the derived S3 key format: `/tenants/{currentTenantId}/products/...`. Switch tenants and verify that files belonging to other tenants are invisible.
-8. **Step 8 - Audit Trail Verification:** Open **"Audit Logs"** and observe tenant-scoped immutable audit trails and security violation records.
+7. **Step 7 - S3 Tenant File Storage & Cascade Cleanup:** Navigate to **"Storage & Files"**. Upload a file and inspect the derived S3 key format: `/tenants/{currentTenantId}/products/...`. Delete the associated product and observe both the product and S3 file are safely purged.
+8. **Step 8 - Audit Trail Verification:** Open **"Audit Trail"** and observe tenant-scoped immutable audit trails and security violation records.

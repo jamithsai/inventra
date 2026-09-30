@@ -48,7 +48,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
             <div className="flex items-center space-x-2">
               <span className="text-sm font-semibold tracking-tight text-[#172033]">
-                Nexus
+                Inventra
               </span>
               <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-[4px] bg-[#E9EEFF] text-[#3157D5] border border-[#C7D7FE] font-medium">
                 Multi-Tenant

@@ -1,8 +1,8 @@
 # ARCHITECTURE & SECURITY SPECIFICATION
 
-## Multi-Tenant Inventory Management Platform
+## Inventra — Multi-Tenant Inventory Management Platform
 
-This document details the architectural blueprint, isolation layers, data models, and request pipelines of the Nexus Multi-Tenant Inventory Platform.
+This document details the architectural blueprint, isolation layers, data models, and request pipelines of the **Inventra Multi-Tenant Inventory Platform**.
 
 ---
 
@@ -12,7 +12,7 @@ This document details the architectural blueprint, isolation layers, data models
 graph TD
     Client["React 19 Frontend<br/>(Vite + Tailwind SaaS UI)"]
     
-    subgraph "ASP.NET Core Web API 8.0"
+    subgraph "ASP.NET Core Web API 9.0"
         Gateway["HTTP Request<br/>X-Tenant-ID: {tenantId}<br/>X-User-ID: {userId}"]
         Middleware["TenantResolutionMiddleware<br/>(Zero-Trust Membership Validator)"]
         Context["ITenantContext<br/>(Scoped Per-Request Container)"]
@@ -20,7 +20,7 @@ graph TD
         Controllers["Controllers<br/>• InventoryController<br/>• FilesController<br/>• AuditLogsController"]
         Services["Services<br/>• InventoryService<br/>• S3FileStorageService"]
         
-        EFCore["Entity Framework Core 8<br/>• HasQueryFilter(e => e.TenantId == CurrentTenantId)<br/>• EnforceTenantIsolationOnSave()"]
+        EFCore["Entity Framework Core 9<br/>• HasQueryFilter(e => e.TenantId == CurrentTenantId)<br/>• EnforceTenantIsolationOnSave()"]
     end
     
     subgraph "Persistent Storage"
@@ -108,6 +108,7 @@ flowchart LR
 1. S3 Key Path Derivation: Keys are generated exclusively server-side using `$"tenants/{_tenantContext.CurrentTenantId}/products/{guid}_{sanitizedFilename}"`.
 2. Path Traversal Defense: Client-supplied directory paths are ignored and sanitized.
 3. Access Authorization: Pre-signed download URLs and streaming endpoints check `TenantFile.TenantId == CurrentTenantId` before retrieval.
+4. Cascade Cleanup: Deleting a product automatically cascades to delete all associated S3/local files.
 
 ---
 

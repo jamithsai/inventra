@@ -22,7 +22,7 @@ builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo
     {
-        Title = "Multi-Tenant Inventory Platform API",
+        Title = "Inventra Multi-Tenant Inventory Platform API",
         Version = "v1",
         Description = "Enterprise multi-tenant inventory platform featuring EF Core Global Query Filters, Tenant Middleware, and AWS S3 key isolation."
     });
@@ -104,7 +104,7 @@ if (app.Environment.IsDevelopment() || true)
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Multi-Tenant Inventory API v1");
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Inventra Multi-Tenant Inventory API v1");
     });
 }
 

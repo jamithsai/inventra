@@ -1,6 +1,6 @@
 # PS3 END-TO-END VERIFICATION & SECURITY VALIDATION REPORT
 
-**System:** NEXUS Multi-Tenant Inventory Platform  
+**System:** INVENTRA Multi-Tenant Inventory Platform  
 **Target Specifications:** Problem Statement 3 (PS3) Multi-Tenant Inventory Platform  
 **Verification Method:** Automated End-to-End Browser Testing via Playwright + Integration Test Suite (`dotnet test`)  
 **Status:** ✅ ALL REQUIREMENTS VERIFIED & PASSED (100% Compliance)
@@ -20,7 +20,7 @@
 | **7** | **Enterprise React Frontend** | [`frontend/src/App.tsx`](file:///C:/Users/jamit/.gemini/antigravity/scratch/multi-tenant-inventory/frontend/src/App.tsx), [`components/`](file:///C:/Users/jamit/.gemini/antigravity/scratch/multi-tenant-inventory/frontend/src/components/) with Tailwind CSS & Lucide Icons | Verified on `http://localhost:5173` across Desktop (1280x800), Tablet (768x1024), and Mobile (375x812). | ✅ **PASS** |
 | **8** | **Zero-Trust Tenant Switching** | [`components/Navbar.tsx`](file:///C:/Users/jamit/.gemini/antigravity/scratch/multi-tenant-inventory/frontend/src/components/Navbar.tsx#L68), [`App.tsx`](file:///C:/Users/jamit/.gemini/antigravity/scratch/multi-tenant-inventory/frontend/src/App.tsx#L125) | Switched between *Acme Retail* and *Nova Electronics*. Old data flushed, new tenant data fetched via fresh HTTP call. | ✅ **PASS** |
 | **9** | **Selected Tenant Inventory Display** | [`components/InventoryView.tsx`](file:///C:/Users/jamit/.gemini/antigravity/scratch/multi-tenant-inventory/frontend/src/components/InventoryView.tsx), [`DashboardView.tsx`](file:///C:/Users/jamit/.gemini/antigravity/scratch/multi-tenant-inventory/frontend/src/components/DashboardView.tsx) | Verified *Acme Retail* displays 6 electronics items ($107,597) and *Nova Electronics* displays microcontrollers ($9,117). | ✅ **PASS** |
-| **10** | **AWS S3 File Storage Partitioning** | [`Storage/S3FileStorageService.cs`](file:///C:/Users/jamit/.gemini/antigravity/scratch/multi-tenant-inventory/backend/MultiTenantInventory.Api/Storage/S3FileStorageService.cs), [`components/FilesView.tsx`](file:///C:/Users/jamit/.gemini/antigravity/scratch/multi-tenant-inventory/frontend/src/components/FilesView.tsx) | Verified S3 key format `/tenants/{tenantId}/products/{fileName}`. Cross-tenant access to Acme files from Nova context blocked. | ✅ **PASS** |
+| **10** | **AWS S3 File Storage Partitioning** | [`Storage/S3FileStorageService.cs`](file:///C:/Users/jamit/.gemini/antigravity/scratch/multi-tenant-inventory/backend/MultiTenantInventory.Api/Storage/S3FileStorageService.cs), [`components/FilesView.tsx`](file:///C:/Users/jamit/.gemini/antigravity/scratch/multi-tenant-inventory/frontend/src/components/FilesView.tsx) | Verified S3 key format `/tenants/{tenantId}/products/{fileName}`. Cross-tenant access to Acme files from Nova context blocked. Cascade cleanup on delete verified. | ✅ **PASS** |
 | **11** | **Tenant Data Isolation Demo & Security Attack Bench** | [`components/TenantIsolationDemoView.tsx`](file:///C:/Users/jamit/.gemini/antigravity/scratch/multi-tenant-inventory/frontend/src/components/TenantIsolationDemoView.tsx), [`Controllers/SecurityController.cs`](file:///C:/Users/jamit/.gemini/antigravity/scratch/multi-tenant-inventory/backend/MultiTenantInventory.Api/Controllers/SecurityController.cs) | Executed all 5 live attack simulations directly in browser; real API responses verified for 403 Forbidden / 404 Not Found. | ✅ **PASS** |
 
 ---
@@ -28,8 +28,8 @@
 ## 🔍 2. Step-by-Step Playwright Browser Verification Log
 
 ### STEP 1 & 2: Application Launch & Basic Flow
-- **Backend URL:** `http://localhost:5000` (ASP.NET Core 8 Web API)
-- **Frontend URL:** `http://localhost:5173` (Vite + React)
+- **Backend URL:** `http://localhost:5000` (ASP.NET Core 9 Web API)
+- **Frontend URL:** `http://localhost:5173` (Vite + React 19)
 - **Status:** Initialized cleanly. Database created and seeded with 3 tenants (*Acme Retail*, *Nova Electronics*, *Zenith Supplies*).
 - **Initial Dashboard State:** Acme Retail loaded with 6 SKUs, 103 units, valuation $107,597. Active user: **Admin User** (`usr_admin_1`).
 
@@ -81,11 +81,12 @@ Tested in Nova Electronics context:
 1. **Create:** Added `"NVIDIA Jetson Orin Nano Developer Kit"` (SKU: `NOV-JET-ORIN`, Qty: 25, Price: $149.99). Backend automatically assigned `TenantId = "nova-electronics"`.
 2. **Stock Adjust:** Added +10 units (Stock: 25 → 35). Transaction and audit log automatically logged.
 3. **Edit:** Updated title to `"NVIDIA Jetson Orin Nano Developer Kit (8GB Super)"`.
-4. **Delete:** Handled confirmation prompt and deleted item. Table refreshed immediately.
+4. **Delete:** Handled confirmation prompt and deleted item. Cascade file cleanup executed.
 
-### STEP 7: AWS S3 File Isolation
+### STEP 7: AWS S3 File Isolation & Cascade Deletion
 - Verified S3 tenant path: `tenants/nova-electronics/products/esp32_datasheet.pdf`.
 - Verified that Acme Retail's files (`spec_iphone15.pdf`, `warranty_dellxps.pdf`) are 100% invisible in Nova Electronics.
+- Verified deleting a product also deletes attached S3 files safely.
 
 ### STEP 8: Audit Trail Isolation
 - Verified that all operational actions (`PRODUCT_CREATED`, `STOCK_UPDATED`, `PRODUCT_UPDATED`, `PRODUCT_DELETED`) were committed with `TenantId = "nova-electronics"`.
@@ -113,11 +114,9 @@ Tested in Nova Electronics context:
 
 ```powershell
 # 1. Run Automated xUnit Integration Test Suite
-cd backend/MultiTenantInventory.Tests
-dotnet test --logger "console;verbosity=detailed"
+dotnet test backend/MultiTenantInventory.Tests/MultiTenantInventory.Tests.csproj
 
 # 2. Start Application
-cd ../..
 .\start-all.ps1
 
 # 3. Open Browser

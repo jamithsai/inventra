@@ -1,5 +1,5 @@
 Write-Host "==================================================" -ForegroundColor Cyan
-Write-Host "  NEXUS MULTI-TENANT INVENTORY PLATFORM STARTUP  " -ForegroundColor White
+Write-Host " INVENTRA MULTI-TENANT INVENTORY PLATFORM STARTUP " -ForegroundColor White
 Write-Host "==================================================" -ForegroundColor Cyan
 
 $dotnet = "$env:USERPROFILE\.dotnet\dotnet.exe"

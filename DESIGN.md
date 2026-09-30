@@ -1,6 +1,6 @@
-# NEXUS — Warm Ivory, Cobalt & Amber Enterprise Design System (DESIGN.md)
+# INVENTRA — Warm Ivory, Cobalt & Amber Enterprise Design System (DESIGN.md)
 
-This design system defines the visual language, design tokens, component standards, and tenant isolation UX patterns for the **NEXUS Multi-Tenant Inventory Platform**.
+This design system defines the visual language, design tokens, component standards, and tenant isolation UX patterns for the **INVENTRA Multi-Tenant Inventory Platform**.
 
 ---
 
