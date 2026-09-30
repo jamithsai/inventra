@@ -2,6 +2,8 @@ import axios from 'axios';
 import type {
   Tenant,
   User,
+  DemoAccount,
+  LoginResponse,
   InventoryItem,
   CreateInventoryItemDto,
   UpdateInventoryItemDto,
@@ -15,6 +17,42 @@ import type {
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
+// Storage keys
+const TOKEN_KEY = 'inventra_auth_token';
+const USER_KEY = 'inventra_auth_user';
+const TENANT_KEY = 'inventra_active_tenant';
+
+// Load stored session on startup
+let currentAuthToken: string = localStorage.getItem(TOKEN_KEY) || '';
+let currentUserId: string = '';
+let currentTenantId: string = localStorage.getItem(TENANT_KEY) || 'acme-retail';
+
+try {
+  const storedUser = localStorage.getItem(USER_KEY);
+  if (storedUser) {
+    const parsed = JSON.parse(storedUser);
+    currentUserId = parsed.id || '';
+  }
+} catch {
+  // Ignore parse errors
+}
+
+// Listeners for auth state changes (e.g., 401 unauthorized triggers logout)
+type AuthChangeListener = (user: User | null, token: string) => void;
+const authChangeListeners: AuthChangeListener[] = [];
+
+export const onAuthStateChanged = (listener: AuthChangeListener) => {
+  authChangeListeners.push(listener);
+  return () => {
+    const index = authChangeListeners.indexOf(listener);
+    if (index > -1) authChangeListeners.splice(index, 1);
+  };
+};
+
+const notifyAuthChanged = (user: User | null, token: string) => {
+  authChangeListeners.forEach((fn) => fn(user, token));
+};
+
 // Create base axios client
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -23,13 +61,9 @@ export const apiClient = axios.create({
   },
 });
 
-// State holder for active tenant and auth token
-let currentTenantId: string = 'acme-retail';
-let currentUserId: string = 'usr_admin_1';
-let currentAuthToken: string = '';
-
 export const setApiTenantId = (tenantId: string) => {
   currentTenantId = tenantId;
+  localStorage.setItem(TENANT_KEY, tenantId);
 };
 
 export const getApiTenantId = () => currentTenantId;
@@ -37,9 +71,37 @@ export const getApiTenantId = () => currentTenantId;
 export const setApiUser = (userId: string, token: string = '') => {
   currentUserId = userId;
   currentAuthToken = token;
+  if (token) {
+    localStorage.setItem(TOKEN_KEY, token);
+  } else {
+    localStorage.removeItem(TOKEN_KEY);
+  }
 };
 
 export const getApiUser = () => ({ userId: currentUserId, token: currentAuthToken });
+
+export const getStoredAuth = (): { token: string; user: User | null; activeTenantId: string } => {
+  let user: User | null = null;
+  try {
+    const raw = localStorage.getItem(USER_KEY);
+    if (raw) user = JSON.parse(raw);
+  } catch {
+    user = null;
+  }
+  return {
+    token: localStorage.getItem(TOKEN_KEY) || '',
+    user,
+    activeTenantId: localStorage.getItem(TENANT_KEY) || 'acme-retail',
+  };
+};
+
+export const clearStoredAuth = () => {
+  currentAuthToken = '';
+  currentUserId = '';
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(USER_KEY);
+  notifyAuthChanged(null, '');
+};
 
 // Request interceptor to inject X-Tenant-ID and User/Auth headers
 apiClient.interceptors.request.use((config) => {
@@ -49,25 +111,63 @@ apiClient.interceptors.request.use((config) => {
   if (currentUserId && !config.headers['X-User-ID']) {
     config.headers['X-User-ID'] = currentUserId;
   }
-  if (currentAuthToken) {
+  if (currentAuthToken && !config.headers['Authorization']) {
     config.headers['Authorization'] = `Bearer ${currentAuthToken}`;
   }
   return config;
 });
 
+// Response interceptor to handle 401 Unauthorized globally
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // If we got a 401 on an authenticated call, clear tokens so UI redirects to Login
+      if (currentAuthToken) {
+        clearStoredAuth();
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 // --- Auth & Users API ---
 export const authApi = {
+  login: async (email: string, password: string): Promise<LoginResponse> => {
+    const res = await apiClient.post<LoginResponse>('/auth/login', { email, password });
+    const { token, user } = res.data;
+    setApiUser(user.id, token);
+    localStorage.setItem(TOKEN_KEY, token);
+    localStorage.setItem(USER_KEY, JSON.stringify(user));
+    notifyAuthChanged(user, token);
+    return res.data;
+  },
+
+  getDemoAccounts: async (): Promise<DemoAccount[]> => {
+    const res = await apiClient.get<DemoAccount[]>('/auth/demo-accounts');
+    return res.data;
+  },
+
+  getCurrentUser: async (): Promise<User> => {
+    const res = await apiClient.get<User>('/auth/me');
+    return res.data;
+  },
+
+  logout: () => {
+    clearStoredAuth();
+  },
+
   getUsers: async (): Promise<User[]> => {
     const res = await apiClient.get<User[]>('/auth/users');
     return res.data;
   },
+
   loginAs: async (userId: string): Promise<{ user: User; token: string; authorizedTenants: Tenant[] }> => {
     const res = await apiClient.post(`/auth/login-as`, { userId });
     setApiUser(res.data.user.id, res.data.token);
-    return res.data;
-  },
-  getCurrentUser: async (): Promise<User> => {
-    const res = await apiClient.get<User>('/auth/me');
+    localStorage.setItem(TOKEN_KEY, res.data.token);
+    localStorage.setItem(USER_KEY, JSON.stringify(res.data.user));
+    notifyAuthChanged(res.data.user, res.data.token);
     return res.data;
   },
 };

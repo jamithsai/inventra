@@ -1,6 +1,7 @@
 # INVENTRA MULTI-TENANT INVENTORY PLATFORM
 
-[![ASP.NET Core 9](https://img.shields.io/badge/ASP.NET%20Core-9.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
+[![ASP.NET Core 8](https://img.shields.io/badge/ASP.NET%20Core-8.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
+[![JWT Bearer Authentication](https://img.shields.io/badge/Authentication-JWT%20Bearer%20%2B%20PBKDF2-000000?logo=jsonwebtokens)](https://jwt.io/)
 [![EF Core Query Filters](https://img.shields.io/badge/EF%20Core-Global%20Query%20Filters-68217A)](https://learn.microsoft.com/en-us/ef/core/)
 [![React 19](https://img.shields.io/badge/Frontend-React%20%2B%20Vite%20%2B%20Tailwind-61DAFB?logo=react)](https://react.dev/)
 [![AWS S3 Partitioned](https://img.shields.io/badge/Storage-AWS%20S3%20Tenant%20Isolated-FF9900?logo=amazons3)](https://aws.amazon.com/s3/)
@@ -10,11 +11,11 @@
 
 ## 📌 Executive Summary
 
-**Inventra Multi-Tenant Inventory Platform** is a production-grade SaaS architecture designed to host multiple independent organizations (*Acme Retail*, *Nova Electronics*, *Zenith Supplies*) on a shared infrastructure while enforcing **hardware-grade mathematical isolation** of data and file storage across all application layers.
+**Inventra Multi-Tenant Inventory Platform** is a production-grade enterprise SaaS architecture designed to host multiple independent organizations (*Acme Retail*, *Nova Electronics*, *Zenith Supplies*) on a shared infrastructure while enforcing **hardware-grade mathematical isolation** of data and file storage across all application layers.
 
 ### Core Tenet
 > **"Never trust client claims alone."**
-> A request header such as `X-Tenant-ID` only states *requested context*. Tenant isolation is strictly enforced through server-side cryptographic user-membership validation, scoped dependency injection (`ITenantContext`), and **EF Core Global Query Filters** that automatically inject tenant boundary predicates into every database query.
+> Authentication is strictly enforced via **cryptographic JWT Bearer tokens** with PBKDF2 password hashing. A request header such as `X-Tenant-ID` only states *requested workspace context*. Multi-tenant authorization is validated server-side by checking the authenticated user's `TenantMemberships` against the database before initializing scoped dependency injection (`ITenantContext`) and **EF Core Global Query Filters** that automatically inject tenant boundary predicates into every database query.
 
 ---
 
@@ -23,19 +24,25 @@
 ```mermaid
 flowchart TD
     subgraph Client ["Frontend Layer (React + Vite)"]
+        Login["Enterprise Login Page (PBKDF2 + JWT Auth)"]
         UI["Enterprise SaaS Dashboard"]
-        Selector["Tenant Switcher (X-Tenant-ID Header)"]
+        Selector["Authorized Workspace Selector"]
+        Profile["User Profile & Session Sign Out"]
+        Login -->|Authenticates| UI
         UI --> Selector
+        UI --> Profile
     end
 
     subgraph API_Gate ["ASP.NET Core Web API Gateway"]
         Req["Incoming HTTP Request"]
+        JwtAuth["JWT Bearer Authentication Handler"]
         Middleware["TenantResolutionMiddleware (Zero Trust)"]
         AuthCheck["Cryptographic User Membership Validation"]
-        Context["ITenantContext (Scoped Scoped DI)"]
+        Context["ITenantContext (Scoped DI)"]
 
-        Selector -->|HTTP Headers| Req
-        Req --> Middleware
+        Selector -->|Bearer Token + X-Tenant-ID| Req
+        Req --> JwtAuth
+        JwtAuth --> Middleware
         Middleware --> AuthCheck
         AuthCheck -->|Authorized| Context
         AuthCheck -->|Unauthorized Spoofing| Err403["403 Forbidden / Access Denied"]
@@ -68,36 +75,35 @@ flowchart TD
 
 | Layer | Implementation Mechanism | Security Guarantee |
 | :--- | :--- | :--- |
-| **1. Middleware Layer** | `TenantResolutionMiddleware` | Intercepts `X-Tenant-ID` and cross-validates against database `TenantMemberships`. Rejects unauthorized spoofing with `403 Forbidden`. |
-| **2. Scoped Context** | `ITenantContext` / `TenantContext` | Thread-safe per-request DI container lifetime holding verified `CurrentTenantId`. |
-| **3. EF Core Data Access** | `.HasQueryFilter(e => e.TenantId == _tenantContext.CurrentTenantId)` | Automatically appends `WHERE TenantId = @currentTenant` to all `SELECT`, `UPDATE`, `DELETE` queries. |
-| **4. Database Storage** | `ITenantEntity` & Composite Unique Indexes `(TenantId, SKU)` | Hard multitenant relational schemas preventing cross-tenant collisions. |
-| **5. File Storage (AWS S3)** | `IFileStorageService` + `tenants/{tenantId}/products/{fileName}` | S3 key paths derived strictly from server tenant context. No client-supplied path traversal possible. Cascade cleanup on product delete. |
-| **6. Frontend Dashboard** | Complete cache invalidation & re-fetch on tenant switch | UI reflects only authorized tenant data; offers live interactive security attack bench for hackathon judges. |
+| **1. Authentication Layer** | JWT Bearer Tokens + PBKDF2-SHA256 Password Hashing | Authenticated user identity derived exclusively from signed cryptographic JWT tokens. |
+| **2. Middleware Layer** | `TenantResolutionMiddleware` | Intercepts `X-Tenant-ID` and cross-validates against database `TenantMemberships`. Rejects unauthorized spoofing with `403 Forbidden`. |
+| **3. Scoped Context** | `ITenantContext` / `TenantContext` | Thread-safe per-request DI container lifetime holding verified `CurrentTenantId` and `CurrentUserId`. |
+| **4. EF Core Data Access** | `.HasQueryFilter(e => e.TenantId == _tenantContext.CurrentTenantId)` | Automatically appends `WHERE TenantId = @currentTenant` to all `SELECT`, `UPDATE`, `DELETE` queries. |
+| **5. Database Storage** | `ITenantEntity` & Composite Unique Indexes `(TenantId, SKU)` | Hard multitenant relational schemas preventing cross-tenant collisions. |
+| **6. File Storage (AWS S3)** | `IFileStorageService` + `tenants/{tenantId}/products/{fileName}` | S3 key paths derived strictly from server tenant context. No client-supplied path traversal possible. Cascade cleanup on product delete. |
 
 ---
 
-## 👥 Seeded Demo Tenants & User Personas
+## 👥 Demo Accounts & Workspaces
 
-The platform seeds 3 distinct organizations and 4 user personas with varying permissions:
+The platform seeds 3 distinct organizations and 4 enterprise accounts (Default demo password for all accounts: `Inventra@2026!`):
 
-### Demo Tenants
-1. **Acme Retail** (`acme-retail`): High-volume consumer electronics (iPhone 15 Pro, Dell XPS 15, Samsung Odyssey G9, Sony XM5).
-2. **Nova Electronics** (`nova-electronics`): Embedded IoT systems & microcontrollers (ESP32-WROOM-32D, Arduino Uno R4 WiFi, Raspberry Pi 5, STM32).
-3. **Zenith Supplies** (`zenith-supplies`): Premium enterprise office furnishings & equipment (Herman Miller Aeron, HP LaserJet Pro, Keychron Q1 Pro).
+| Account Name | Work Email | Platform Role | Authorized Workspaces | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| **Admin User** | `admin@platform.io` | `ADMIN` | Acme Retail, Nova Electronics | Multi-Tenant Platform Owner with multi-workspace access. |
+| **Nova Electronics Manager** | `manager@nova-electronics.io` | `MANAGER` | Nova Electronics | Operations Lead with single-workspace scope. |
+| **Zenith Supplies Specialist** | `specialist@zenith-supplies.io` | `MANAGER` | Zenith Supplies | Inventory Specialist with single-workspace scope. |
+| **Acme Compliance Auditor** | `auditor@acme-retail.com` | `VIEWER` | Acme Retail | Read-only compliance auditor for Acme Retail. |
 
-### Demo User Personas
-* **Admin User (`usr_admin_1`)**: Authorized for **Acme Retail** and **Nova Electronics**. (Blocked from Zenith Supplies).
-* **Nova Electronics Manager (`usr_manager_nova`)**: Authorized ONLY for **Nova Electronics**.
-* **Zenith Supplies Specialist (`usr_zenith_user`)**: Authorized ONLY for **Zenith Supplies**.
-* **Acme Compliance Auditor (`usr_auditor_acme`)**: Read-only access for **Acme Retail**.
+> [!NOTE]
+> All passwords are cryptographically hashed using **PBKDF2-SHA256 with 100,000 iterations and 128-bit salt**. The Login page provides a quick-select helper that autofills only the email address for convenient demonstration while requiring real password verification.
 
 ---
 
 ## 🚀 Quick Start Guide
 
 ### Prerequisites
-- [.NET 8.0 or 9.0 SDK](https://dotnet.microsoft.com/)
+- [.NET 8.0 SDK](https://dotnet.microsoft.com/)
 - [Node.js v18+ & npm](https://nodejs.org/)
 
 ### 1. Run the Backend API
@@ -106,7 +112,7 @@ cd backend/MultiTenantInventory.Api
 dotnet run
 ```
 * API Server will start at: `http://localhost:5000`
-* Interactive Swagger API Docs: `http://localhost:5000/swagger`
+* Interactive Swagger API Docs with Bearer JWT Support: `http://localhost:5000/swagger`
 
 ### 2. Run the Frontend Dashboard
 ```powershell
@@ -120,7 +126,7 @@ npm run dev
 
 ## 🧪 Running Automated Security Verification Tests
 
-Execute the comprehensive xUnit test suite covering all tenant isolation and cascade cleanup invariants:
+Execute the comprehensive xUnit test suite (20 automated integration tests covering authentication, tenant isolation, S3 key isolation, and cascade cleanup):
 
 ```powershell
 dotnet test backend/MultiTenantInventory.Tests/MultiTenantInventory.Tests.csproj
@@ -128,15 +134,16 @@ dotnet test backend/MultiTenantInventory.Tests/MultiTenantInventory.Tests.csproj
 
 ---
 
-## 🎯 Step-by-Step Hackathon Judge Demonstration Flow
+## 🎯 Step-by-Step Demonstration Flow
 
-Follow these steps to demonstrate the security and feature capabilities:
-
-1. **Step 1 - User Persona Inspection:** In the top-right navbar, inspect the active user persona **Admin User** (Authorized for *Acme Retail* and *Nova Electronics*).
-2. **Step 2 - Acme Retail Inventory:** View the active inventory for *Acme Retail* (iPhone 15, Dell XPS, etc.) and note the total inventory valuation.
-3. **Step 3 - Zero-Trust Tenant Switching:** Switch the tenant dropdown to **Nova Electronics**. Notice that the catalog instantly loads microcontroller inventory (ESP32, Raspberry Pi) via network request with `X-Tenant-ID: nova-electronics`.
-4. **Step 4 - Live Security Attack Bench:** Open the **"Isolation Bench"** from the left sidebar.
-5. **Step 5 - Execute IDOR Attack Simulation:** Click **"Simulate"** on *1. Cross-Tenant IDOR*. Observe how accessing another tenant's product ID returns `404 Not Found / 403 Forbidden` due to EF Core Global Query Filters.
-6. **Step 6 - Execute Header Spoofing Attack:** Click **"Simulate"** on *2. Header Tampering*. The system attempts to inject `X-Tenant-ID: zenith-supplies` for the Admin User. Observe the `403 Forbidden` rejection and real-time security violation log.
-7. **Step 7 - S3 Tenant File Storage & Cascade Cleanup:** Navigate to **"Storage & Files"**. Upload a file and inspect the derived S3 key format: `/tenants/{currentTenantId}/products/...`. Delete the associated product and observe both the product and S3 file are safely purged.
-8. **Step 8 - Audit Trail Verification:** Open **"Audit Trail"** and observe tenant-scoped immutable audit trails and security violation records.
+1. **Step 1 - Enterprise Sign In:** On `http://localhost:5173`, select the **Admin User** persona (or enter `admin@platform.io` / `Inventra@2026!`) and click **Sign In**.
+2. **Step 2 - Filtered Workspace Dropdown:** In the top-right navbar, observe the Workspace dropdown contains **only** `Acme Retail` and `Nova Electronics` (the accounts Admin User is authorized to access).
+3. **Step 3 - Switch Workspaces:** Switch to **Nova Electronics**. Notice the catalog dynamically refreshes with microcontrollers and IoT boards.
+4. **Step 4 - Live Security Attack Bench:** Navigate to **"Isolation Bench"** in the sidebar and click **"Run All 5 Test Scenarios"**.
+5. **Step 5 - Verify 100% Defense Passes:**
+   - *Cross-Tenant IDOR:* Blocked by EF Core Query Filters (`404 Not Found`).
+   - *Unauthorized Header Spoofing:* Blocked by `TenantResolutionMiddleware` (`403 Forbidden`).
+   - *Cross-Tenant Mutation:* Blocked by `TenantGuard` (`404 Not Found`).
+   - *Cross-Tenant Deletion:* Blocked by Query Filters (`404 Not Found`).
+   - *S3 Path Traversal:* Blocked by S3 Key Derivation (`404 Not Found`).
+6. **Step 6 - User Profile & Sign Out:** Click the user avatar in the navbar to inspect assigned roles and click **Sign Out** to test session revocation.

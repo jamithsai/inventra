@@ -147,22 +147,46 @@ public class TenantResolutionMiddleware
 
     private string? GetAuthenticatedUserId(HttpContext context)
     {
-        // 1. Check JWT Claims if authenticated
+        // 1. Check JWT Claims if authenticated by ASP.NET Core auth middleware
         if (context.User?.Identity?.IsAuthenticated == true)
         {
             var claim = context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier) ??
                         context.User.FindFirst("sub") ??
                         context.User.FindFirst("uid");
-            if (claim != null) return claim.Value;
+            if (claim != null && !string.IsNullOrWhiteSpace(claim.Value))
+                return claim.Value;
         }
 
-        // 2. Check X-User-ID header (Supported for demo / development persona switching)
+        // 2. Direct Bearer token parsing fallback
+        if (context.Request.Headers.TryGetValue("Authorization", out var authHeaders) &&
+            !string.IsNullOrWhiteSpace(authHeaders.FirstOrDefault()) &&
+            authHeaders.FirstOrDefault()!.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+        {
+            var rawToken = authHeaders.FirstOrDefault()!["Bearer ".Length..].Trim();
+            try
+            {
+                var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+                if (handler.CanReadToken(rawToken))
+                {
+                    var jwt = handler.ReadJwtToken(rawToken);
+                    var subClaim = jwt.Claims.FirstOrDefault(c => c.Type == "sub" || c.Type == System.Security.Claims.ClaimTypes.NameIdentifier || c.Type == "uid");
+                    if (subClaim != null && !string.IsNullOrWhiteSpace(subClaim.Value))
+                        return subClaim.Value;
+                }
+            }
+            catch
+            {
+                // Invalid token format
+            }
+        }
+
+        // 3. Check X-User-ID header (Supported for demo / development persona switching and backward compatibility)
         if (context.Request.Headers.TryGetValue("X-User-ID", out var userHeader) && !string.IsNullOrWhiteSpace(userHeader.FirstOrDefault()))
         {
             return userHeader.FirstOrDefault()!.Trim();
         }
 
-        // 3. Demo Identity Fallback (ONLY if explicitly enabled via configuration and NEVER silently in production)
+        // 4. Demo Identity Fallback (ONLY if explicitly enabled via configuration and NEVER silently in production)
         var allowDemoFallback = _configuration.GetValue<bool>("Authentication:AllowDemoIdentityFallback", false);
         if (allowDemoFallback)
         {

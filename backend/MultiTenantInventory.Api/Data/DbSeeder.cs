@@ -1,10 +1,13 @@
 using Microsoft.EntityFrameworkCore;
 using MultiTenantInventory.Api.Models;
+using MultiTenantInventory.Api.Services;
 
 namespace MultiTenantInventory.Api.Data;
 
 public static class DbSeeder
 {
+    public const string DefaultDemoPassword = "Inventra@2026!";
+
     public static async Task SeedAsync(AppDbContext context)
     {
         // Ensure Database Created
@@ -12,8 +15,25 @@ public static class DbSeeder
 
         if (await context.Tenants.AnyAsync())
         {
+            // Update password hashes if they are empty for seeded users
+            var existingUsers = await context.Users.ToListAsync();
+            var updated = false;
+            foreach (var u in existingUsers)
+            {
+                if (string.IsNullOrEmpty(u.PasswordHash))
+                {
+                    u.PasswordHash = PasswordHasher.Hash(DefaultDemoPassword);
+                    updated = true;
+                }
+            }
+            if (updated)
+            {
+                await context.SaveChangesAsync();
+            }
             return; // Already seeded
         }
+
+        var defaultPasswordHash = PasswordHasher.Hash(DefaultDemoPassword);
 
         // 1. Seed Tenants
         var tenants = new List<Models.Tenant>
@@ -57,6 +77,7 @@ public static class DbSeeder
                 Name = "Admin User",
                 Email = "admin@platform.io",
                 Role = "ADMIN",
+                PasswordHash = defaultPasswordHash,
                 CreatedAt = DateTime.UtcNow.AddMonths(-3)
             },
             new()
@@ -65,6 +86,7 @@ public static class DbSeeder
                 Name = "Nova Electronics Manager",
                 Email = "manager@nova-electronics.io",
                 Role = "MANAGER",
+                PasswordHash = defaultPasswordHash,
                 CreatedAt = DateTime.UtcNow.AddMonths(-2)
             },
             new()
@@ -73,6 +95,7 @@ public static class DbSeeder
                 Name = "Zenith Supplies Specialist",
                 Email = "specialist@zenith-supplies.io",
                 Role = "MANAGER",
+                PasswordHash = defaultPasswordHash,
                 CreatedAt = DateTime.UtcNow.AddMonths(-1)
             },
             new()
@@ -81,6 +104,7 @@ public static class DbSeeder
                 Name = "Acme Compliance Auditor",
                 Email = "auditor@acme-retail.com",
                 Role = "VIEWER",
+                PasswordHash = defaultPasswordHash,
                 CreatedAt = DateTime.UtcNow.AddMonths(-2)
             }
         };

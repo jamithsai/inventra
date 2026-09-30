@@ -4,38 +4,35 @@ import {
   ChevronDown, 
   RotateCw, 
   Check, 
-  Lock,
-  Layers
+  Layers, 
+  LogOut, 
+  User as UserIcon, 
+  Shield, 
+  Briefcase 
 } from 'lucide-react';
 import type { Tenant, User } from '../types';
 
 interface NavbarProps {
   currentTenant: Tenant | null;
-  allTenants: Tenant[];
+  authorizedTenants: Tenant[];
   currentUser: User | null;
-  allUsers: User[];
   onSelectTenant: (tenantId: string) => void;
-  onSelectUser: (userId: string) => void;
+  onLogout: () => void;
   loading: boolean;
   onRefresh: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   currentTenant,
-  allTenants,
+  authorizedTenants,
   currentUser,
-  allUsers,
   onSelectTenant,
-  onSelectUser,
+  onLogout,
   loading,
   onRefresh,
 }) => {
   const [tenantDropdownOpen, setTenantDropdownOpen] = useState(false);
-  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
-
-  const isTenantAuthorized = (tenantId: string) => {
-    return currentUser?.authorizedTenants.includes(tenantId);
-  };
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   return (
     <header className="sticky top-0 z-40 bg-white border-b border-[#E5E1D8] shadow-[0_1px_2px_rgba(23,32,51,0.02)]">
@@ -56,134 +53,147 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
           </div>
 
-          {/* Right Actions: Tenant Selector, User Persona Switcher, Refresh */}
-          <div className="flex items-center space-x-2">
+          {/* Right Actions: Tenant Selector, Refresh, User Profile Menu */}
+          <div className="flex items-center space-x-2.5">
             {/* Refresh Data Button */}
             <button
               onClick={onRefresh}
               disabled={loading}
               title="Refresh Data"
-              className="p-2 rounded-[7px] text-[#667085] hover:text-[#172033] hover:bg-[#FBFAF7] transition border border-transparent hover:border-[#E5E1D8]"
+              className="p-2 rounded-[7px] text-[#667085] hover:text-[#172033] hover:bg-[#FBFAF7] transition border border-transparent hover:border-[#E5E1D8] cursor-pointer"
             >
               <RotateCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-[#3157D5]' : ''}`} />
             </button>
 
-            {/* Tenant Selector Dropdown */}
+            {/* Tenant / Workspace Selector Dropdown (Filtered to Authorized Workspaces) */}
             <div className="relative">
               <button
                 onClick={() => {
                   setTenantDropdownOpen(!tenantDropdownOpen);
-                  setUserDropdownOpen(false);
+                  setUserMenuOpen(false);
                 }}
-                className="flex items-center space-x-2 px-3 py-1.5 rounded-[7px] bg-[#FBFAF7] hover:bg-white border border-[#E5E1D8] transition text-xs text-[#172033]"
+                className="flex items-center space-x-2 px-3 py-1.5 rounded-[7px] bg-[#FBFAF7] hover:bg-white border border-[#E5E1D8] transition text-xs text-[#172033] cursor-pointer"
               >
                 <div className="w-1.5 h-1.5 rounded-full bg-[#238B5A]" />
                 <Building2 className="w-3.5 h-3.5 text-[#667085]" />
                 <span className="font-medium text-[#172033] max-w-[130px] truncate">
-                  {currentTenant ? currentTenant.name : 'Select Organization'}
+                  {currentTenant ? currentTenant.name : 'Select Workspace'}
                 </span>
                 <ChevronDown className="w-3 h-3 text-[#98A2B3]" />
               </button>
 
               {tenantDropdownOpen && (
                 <div className="absolute right-0 mt-1.5 w-64 rounded-[9px] bg-white border border-[#E5E1D8] shadow-[0_4px_16px_rgba(23,32,51,0.08)] py-1 z-50 animate-in fade-in duration-100">
-                  <div className="px-3 py-1.5 border-b border-[#EEEAE3] text-[10px] font-mono uppercase tracking-wider text-[#98A2B3]">
-                    Switch Organization Context
+                  <div className="px-3 py-1.5 border-b border-[#EEEAE3] text-[10px] font-mono uppercase tracking-wider text-[#98A2B3] flex items-center justify-between">
+                    <span>Authorized Workspaces</span>
+                    <span className="text-[9px] bg-[#E9EEFF] text-[#3157D5] px-1.5 py-0.2 rounded font-bold">
+                      {authorizedTenants.length}
+                    </span>
                   </div>
                   <div className="py-1">
-                    {allTenants.map((t) => {
-                      const authorized = isTenantAuthorized(t.id);
-                      const isSelected = currentTenant?.id === t.id;
+                    {authorizedTenants.length === 0 ? (
+                      <div className="px-3 py-2 text-xs text-[#667085]">No authorized workspaces found.</div>
+                    ) : (
+                      authorizedTenants.map((t) => {
+                        const isSelected = currentTenant?.id === t.id;
 
-                      return (
-                        <button
-                          key={t.id}
-                          onClick={() => {
-                            onSelectTenant(t.id);
-                            setTenantDropdownOpen(false);
-                          }}
-                          className={`w-full text-left px-3 py-2 flex items-center justify-between text-xs transition ${
-                            isSelected ? 'bg-[#E9EEFF] text-[#3157D5] font-medium' : 'text-[#172033] hover:bg-[#FBFAF7]'
-                          }`}
-                        >
-                          <div className="flex items-center space-x-2 min-w-0">
-                            <span className="w-1.5 h-1.5 rounded-full bg-[#667085]" />
-                            <div className="truncate">
-                              <div className="truncate font-medium">{t.name}</div>
-                              <div className="text-[10px] font-mono text-[#98A2B3]">{t.id}</div>
+                        return (
+                          <button
+                            key={t.id}
+                            onClick={() => {
+                              onSelectTenant(t.id);
+                              setTenantDropdownOpen(false);
+                            }}
+                            className={`w-full text-left px-3 py-2 flex items-center justify-between text-xs transition cursor-pointer ${
+                              isSelected ? 'bg-[#E9EEFF] text-[#3157D5] font-medium' : 'text-[#172033] hover:bg-[#FBFAF7]'
+                            }`}
+                          >
+                            <div className="flex items-center space-x-2 min-w-0">
+                              <span className="w-1.5 h-1.5 rounded-full bg-[#238B5A]" />
+                              <div className="truncate">
+                                <div className="truncate font-medium">{t.name}</div>
+                                <div className="text-[10px] font-mono text-[#98A2B3]">{t.id}</div>
+                              </div>
                             </div>
-                          </div>
-                          <div>
-                            {authorized ? (
-                              <span className="text-[10px] font-mono text-[#238B5A] flex items-center gap-1">
-                                <Check className="w-3 h-3" />
-                              </span>
-                            ) : (
-                              <span className="text-[10px] font-mono text-[#98A2B3] flex items-center gap-1">
-                                <Lock className="w-3 h-3" />
-                              </span>
-                            )}
-                          </div>
-                        </button>
-                      );
-                    })}
+                            <div>
+                              {isSelected && (
+                                <span className="text-[10px] font-mono text-[#3157D5] flex items-center gap-1">
+                                  <Check className="w-3.5 h-3.5" />
+                                </span>
+                              )}
+                            </div>
+                          </button>
+                        );
+                      })
+                    )}
                   </div>
                 </div>
               )}
             </div>
 
-            {/* User Persona Switcher */}
+            {/* Authenticated User Profile Menu & Sign Out */}
             <div className="relative">
               <button
                 onClick={() => {
-                  setUserDropdownOpen(!userDropdownOpen);
+                  setUserMenuOpen(!userMenuOpen);
                   setTenantDropdownOpen(false);
                 }}
-                className="flex items-center space-x-2 px-2.5 py-1.5 rounded-[7px] bg-[#FBFAF7] hover:bg-white border border-[#E5E1D8] transition text-xs text-[#172033]"
+                className="flex items-center space-x-2 px-2.5 py-1.5 rounded-[7px] bg-[#FBFAF7] hover:bg-white border border-[#E5E1D8] transition text-xs text-[#172033] cursor-pointer"
               >
-                <div className="w-5 h-5 rounded-[5px] bg-[#3157D5] flex items-center justify-center text-[10px] font-medium text-white">
-                  {currentUser?.name.charAt(0) || 'U'}
+                <div className="w-5 h-5 rounded-[5px] bg-[#3157D5] flex items-center justify-center text-[10px] font-bold text-white shadow-2xs">
+                  {currentUser?.name ? currentUser.name.charAt(0).toUpperCase() : 'U'}
                 </div>
-                <span className="font-medium text-[#172033] hidden sm:inline truncate max-w-[110px]">
-                  {currentUser ? currentUser.name : 'Select User'}
+                <span className="font-medium text-[#172033] hidden sm:inline truncate max-w-[120px]">
+                  {currentUser ? currentUser.name : 'Account'}
                 </span>
                 <ChevronDown className="w-3 h-3 text-[#98A2B3]" />
               </button>
 
-              {userDropdownOpen && (
-                <div className="absolute right-0 mt-1.5 w-72 rounded-[9px] bg-white border border-[#E5E1D8] shadow-[0_4px_16px_rgba(23,32,51,0.08)] py-1 z-50 animate-in fade-in duration-100">
-                  <div className="px-3 py-1.5 border-b border-[#EEEAE3] text-[10px] font-mono uppercase tracking-wider text-[#98A2B3]">
-                    Switch User Persona
+              {userMenuOpen && (
+                <div className="absolute right-0 mt-1.5 w-72 rounded-[9px] bg-white border border-[#E5E1D8] shadow-[0_4px_20px_rgba(23,32,51,0.08)] py-1.5 z-50 animate-in fade-in duration-100 divide-y divide-[#EEEAE3]">
+                  {/* User Profile Header */}
+                  <div className="px-3.5 py-2.5 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-xs text-[#172033]">{currentUser?.name}</span>
+                      <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#E9EEFF] text-[#3157D5] border border-[#C7D7FE] font-bold uppercase">
+                        {currentUser?.role || 'USER'}
+                      </span>
+                    </div>
+                    <div className="text-[11px] font-mono text-[#667085] truncate">
+                      {currentUser?.email}
+                    </div>
+                    <div className="text-[10px] font-mono text-[#98A2B3]">
+                      User ID: {currentUser?.id}
+                    </div>
                   </div>
-                  <div className="py-1">
-                    {allUsers.map((u) => {
-                      const isSelected = currentUser?.id === u.id;
-                      return (
-                        <button
-                          key={u.id}
-                          onClick={() => {
-                            onSelectUser(u.id);
-                            setUserDropdownOpen(false);
-                          }}
-                          className={`w-full text-left px-3 py-2 text-xs transition ${
-                            isSelected ? 'bg-[#E9EEFF] text-[#3157D5] font-medium' : 'text-[#172033] hover:bg-[#FBFAF7]'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="font-medium text-[#172033]">{u.name}</span>
-                            <span className="text-[10px] font-mono text-[#667085] uppercase">{u.role}</span>
-                          </div>
-                          <div className="text-[10px] text-[#98A2B3] font-mono mt-0.5 truncate">{u.email}</div>
-                          <div className="mt-1 flex flex-wrap gap-1">
-                            {u.authorizedTenants.map((tId) => (
-                              <span key={tId} className="text-[9px] font-mono px-1 py-0.2 rounded bg-[#FBFAF7] text-[#667085] border border-[#EEEAE3]">
-                                {tId}
-                              </span>
-                            ))}
-                          </div>
-                        </button>
-                      );
-                    })}
+
+                  {/* Authorized Workspaces section */}
+                  <div className="px-3.5 py-2 space-y-1.5">
+                    <div className="text-[10px] font-mono uppercase tracking-wider text-[#98A2B3] flex items-center space-x-1">
+                      <Briefcase className="w-3 h-3" />
+                      <span>Authorized Tenants</span>
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      {currentUser?.authorizedTenants.map((tId) => (
+                        <span key={tId} className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#FBFAF7] text-[#172033] border border-[#E5E1D8]">
+                          {tId}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Sign Out Action */}
+                  <div className="p-1">
+                    <button
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        onLogout();
+                      }}
+                      className="w-full text-left px-3 py-2 text-xs text-[#D9383A] hover:bg-[#FDECEC] rounded-[6px] transition flex items-center space-x-2 font-medium cursor-pointer"
+                    >
+                      <LogOut className="w-3.5 h-3.5 text-[#D9383A]" />
+                      <span>Sign Out</span>
+                    </button>
                   </div>
                 </div>
               )}

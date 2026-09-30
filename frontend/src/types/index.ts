@@ -17,6 +17,22 @@ export interface User {
   authorizedTenants: string[];
 }
 
+export interface DemoAccount {
+  id: string;
+  name: string;
+  email: string;
+  role: 'ADMIN' | 'MANAGER' | 'VIEWER';
+  tenantNames: string[];
+  tenantIds: string[];
+  description: string;
+}
+
+export interface LoginResponse {
+  token: string;
+  user: User;
+  authorizedTenants: Tenant[];
+}
+
 export interface InventoryItem {
   id: string;
   tenantId: string;
