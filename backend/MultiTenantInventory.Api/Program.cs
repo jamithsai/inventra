@@ -95,10 +95,11 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// 4. Register Scoped Tenant Context, Resolver & Auth Service
+// 4. Register Scoped Tenant Context, Resolver, Auth & Provisioning Services
 builder.Services.AddScoped<ITenantContext, TenantContext>();
 builder.Services.AddScoped<ITenantResolver, TenantResolver>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<ITenantProvisioningService, TenantProvisioningService>();
 
 // 5. Register Database with SQLite & Scoped AppDbContext
 var dbPath = Path.Combine(AppContext.BaseDirectory, "multi_tenant_inventory.db");

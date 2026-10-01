@@ -65,6 +65,18 @@ public class TenantResolutionMiddleware
             return;
         }
 
+        // 3b. Verify that the Tenant is ACTIVE (Reject SUSPENDED tenants)
+        if (string.Equals(tenant.Status, "SUSPENDED", StringComparison.OrdinalIgnoreCase))
+        {
+            _logger.LogWarning("Tenant '{TenantId}' is SUSPENDED. Access DENIED.", requestedTenantId);
+            await WriteErrorResponseAsync(
+                context,
+                HttpStatusCode.Forbidden,
+                "TenantSuspended",
+                $"Tenant '{requestedTenantId}' is currently suspended. Access to tenant resources is blocked.");
+            return;
+        }
+
         // 4. Identify the Authenticated User (from JWT claims, X-User-ID header, or explicit demo fallback if enabled)
         var userId = GetAuthenticatedUserId(context);
         if (string.IsNullOrEmpty(userId))
@@ -131,6 +143,8 @@ public class TenantResolutionMiddleware
             path.StartsWith("/api-docs") || 
             path.StartsWith("/health") || 
             path.StartsWith("/api/auth") ||
+            path.StartsWith("/api/platform") ||
+            path.StartsWith("/api/invitations") ||
             path.StartsWith("/api/security/simulate-attack"))
         {
             return true;

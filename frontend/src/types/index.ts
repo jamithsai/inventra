@@ -136,3 +136,78 @@ export interface SecurityTestResult {
   timestamp: string;
   description: string;
 }
+
+// Platform Tenant & Onboarding Types
+export interface InvitationSummary {
+  id: string;
+  email: string;
+  adminName: string;
+  role: string;
+  status: 'PENDING' | 'ACCEPTED' | 'EXPIRED' | 'REVOKED';
+  expiresAt: string;
+  createdAt: string;
+}
+
+export interface PlatformTenant {
+  id: string;
+  name: string;
+  code: string;
+  slug: string;
+  description?: string;
+  industry?: string;
+  contactNumber?: string;
+  status: 'ACTIVE' | 'SUSPENDED';
+  createdAt: string;
+  updatedAt?: string;
+  userCount: number;
+  productCount: number;
+  initialAdminName?: string;
+  initialAdminEmail?: string;
+  pendingInvitation?: InvitationSummary;
+}
+
+export interface CreateTenantRequest {
+  name: string;
+  slug: string;
+  code: string;
+  adminName: string;
+  adminEmail: string;
+  industry?: string;
+  contactNumber?: string;
+  description?: string;
+}
+
+export interface TenantProvisioningResponse {
+  tenant: PlatformTenant;
+  invitation: InvitationSummary;
+  rawInvitationToken: string;
+  invitationUrl: string;
+  message: string;
+}
+
+export interface InvitationDetails {
+  invitationId: string;
+  tenantId: string;
+  tenantName: string;
+  tenantCode: string;
+  industry?: string;
+  adminName: string;
+  email: string;
+  role: string;
+  status: 'PENDING' | 'ACCEPTED' | 'EXPIRED' | 'REVOKED';
+  expiresAt: string;
+  isExpired: boolean;
+}
+
+export interface AcceptInvitationRequest {
+  password: string;
+  confirmPassword: string;
+}
+
+export interface TenantMember {
+  userId: string;
+  name: string;
+  email: string;
+  role: string;
+  joinedAt: string;
+}

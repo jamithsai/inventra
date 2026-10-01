@@ -8,32 +8,37 @@ public static class DbSeeder
 {
     public const string DefaultDemoPassword = "Inventra@2026!";
 
+    private static readonly SemaphoreSlim _semaphore = new(1, 1);
+
     public static async Task SeedAsync(AppDbContext context)
     {
-        // Ensure Database Created
-        await context.Database.EnsureCreatedAsync();
-
-        if (await context.Tenants.AnyAsync())
+        await _semaphore.WaitAsync();
+        try
         {
-            // Update password hashes if they are empty for seeded users
-            var existingUsers = await context.Users.ToListAsync();
-            var updated = false;
-            foreach (var u in existingUsers)
-            {
-                if (string.IsNullOrEmpty(u.PasswordHash))
-                {
-                    u.PasswordHash = PasswordHasher.Hash(DefaultDemoPassword);
-                    updated = true;
-                }
-            }
-            if (updated)
-            {
-                await context.SaveChangesAsync();
-            }
-            return; // Already seeded
-        }
+            // Ensure Database Created
+            await context.Database.EnsureCreatedAsync();
 
-        var defaultPasswordHash = PasswordHasher.Hash(DefaultDemoPassword);
+            if (await context.Tenants.AnyAsync())
+            {
+                // Update password hashes if they are empty for seeded users
+                var existingUsers = await context.Users.ToListAsync();
+                var updated = false;
+                foreach (var u in existingUsers)
+                {
+                    if (string.IsNullOrEmpty(u.PasswordHash))
+                    {
+                        u.PasswordHash = PasswordHasher.Hash(DefaultDemoPassword);
+                        updated = true;
+                    }
+                }
+                if (updated)
+                {
+                    await context.SaveChangesAsync();
+                }
+                return; // Already seeded
+            }
+
+            var defaultPasswordHash = PasswordHasher.Hash(DefaultDemoPassword);
 
         // 1. Seed Tenants
         var tenants = new List<Models.Tenant>
@@ -44,6 +49,8 @@ public static class DbSeeder
                 Name = "Acme Retail",
                 Code = "ACME",
                 Description = "High-volume consumer electronics, laptops, flagship mobile devices and personal computing gear.",
+                Industry = "Consumer Electronics",
+                ContactNumber = "+1 (800) 555-0199",
                 Status = "ACTIVE",
                 CreatedAt = DateTime.UtcNow.AddMonths(-3)
             },
@@ -53,6 +60,8 @@ public static class DbSeeder
                 Name = "Nova Electronics",
                 Code = "NOVA",
                 Description = "Embedded systems distributor, IoT microcontrollers, single-board computers and sensors.",
+                Industry = "IoT & Hardware Distribution",
+                ContactNumber = "+1 (800) 555-0245",
                 Status = "ACTIVE",
                 CreatedAt = DateTime.UtcNow.AddMonths(-2)
             },
@@ -62,6 +71,8 @@ public static class DbSeeder
                 Name = "Zenith Supplies",
                 Code = "ZENITH",
                 Description = "Premium enterprise office furnishings, laser printers, ergonomic workstations and infrastructure.",
+                Industry = "Enterprise Workspace Solutions",
+                ContactNumber = "+1 (800) 555-0378",
                 Status = "ACTIVE",
                 CreatedAt = DateTime.UtcNow.AddMonths(-1)
             }
@@ -550,5 +561,10 @@ public static class DbSeeder
         context.InventoryTransactions.AddRange(transactions);
 
         await context.SaveChangesAsync();
+        }
+        finally
+        {
+            _semaphore.Release();
+        }
     }
 }

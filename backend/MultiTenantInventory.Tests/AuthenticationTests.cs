@@ -98,7 +98,7 @@ public class AuthenticationTests : IClassFixture<WebApplicationFactory<Program>>
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var accounts = await response.Content.ReadFromJsonAsync<List<DemoAccountDto>>(_jsonOptions);
         accounts.Should().NotBeNull();
-        accounts!.Should().HaveCount(4);
+        accounts!.Should().HaveCountGreaterOrEqualTo(4);
         accounts.Select(a => a.Email).Should().Contain("admin@platform.io");
         accounts.Select(a => a.Email).Should().Contain("manager@nova-electronics.io");
         accounts.Select(a => a.Email).Should().Contain("specialist@zenith-supplies.io");

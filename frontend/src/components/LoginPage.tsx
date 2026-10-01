@@ -19,10 +19,11 @@ import { authApi } from '../services/api';
 
 interface LoginPageProps {
   onLoginSuccess: (data: LoginResponse) => void;
+  initialEmail?: string;
 }
 
-export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
-  const [email, setEmail] = useState('');
+export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, initialEmail = '' }) => {
+  const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);

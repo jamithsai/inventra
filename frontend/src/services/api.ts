@@ -13,6 +13,12 @@ import type {
   DashboardStats,
   SecurityTestResult,
   InventoryTransaction,
+  PlatformTenant,
+  CreateTenantRequest,
+  TenantProvisioningResponse,
+  InvitationDetails,
+  AcceptInvitationRequest,
+  TenantMember,
 } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
@@ -312,3 +318,40 @@ export const securityDemoApi = {
     }
   },
 };
+
+// --- Platform Tenant Management API (Platform Admin only) ---
+export const platformApi = {
+  getAllTenants: async (): Promise<PlatformTenant[]> => {
+    const res = await apiClient.get<PlatformTenant[]>('/platform/tenants');
+    return res.data;
+  },
+  getTenantById: async (id: string): Promise<PlatformTenant> => {
+    const res = await apiClient.get<PlatformTenant>(`/platform/tenants/${id}`);
+    return res.data;
+  },
+  provisionTenant: async (data: CreateTenantRequest): Promise<TenantProvisioningResponse> => {
+    const res = await apiClient.post<TenantProvisioningResponse>('/platform/tenants', data);
+    return res.data;
+  },
+  updateTenantStatus: async (id: string, status: 'ACTIVE' | 'SUSPENDED'): Promise<PlatformTenant> => {
+    const res = await apiClient.patch<PlatformTenant>(`/platform/tenants/${id}/status`, { status });
+    return res.data;
+  },
+  getTenantMembers: async (id: string): Promise<TenantMember[]> => {
+    const res = await apiClient.get<TenantMember[]>(`/platform/tenants/${id}/members`);
+    return res.data;
+  },
+};
+
+// --- Tenant Invitations API (Public / Token-based) ---
+export const invitationsApi = {
+  getInvitation: async (token: string): Promise<InvitationDetails> => {
+    const res = await apiClient.get<InvitationDetails>(`/invitations/${token}`);
+    return res.data;
+  },
+  acceptInvitation: async (token: string, data: AcceptInvitationRequest): Promise<{ success: boolean; message: string; tenantId: string; email: string }> => {
+    const res = await apiClient.post<{ success: boolean; message: string; tenantId: string; email: string }>(`/invitations/${token}/accept`, data);
+    return res.data;
+  },
+};
+

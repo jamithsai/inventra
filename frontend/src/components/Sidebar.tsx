@@ -5,16 +5,18 @@ import {
   FolderLock, 
   ScrollText, 
   ShieldCheck, 
-  Layers
+  Layers,
+  Building2
 } from 'lucide-react';
 
-export type TabType = 'dashboard' | 'inventory' | 'files' | 'audit' | 'security-demo' | 'architecture';
+export type TabType = 'dashboard' | 'inventory' | 'files' | 'audit' | 'security-demo' | 'architecture' | 'platform-tenants';
 
 interface SidebarProps {
   currentTab: TabType;
   onTabChange: (tab: TabType) => void;
   tenantName?: string;
   tenantId?: string;
+  isPlatformAdmin?: boolean;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -22,6 +24,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onTabChange,
   tenantName,
   tenantId,
+  isPlatformAdmin = false,
 }) => {
   const workspaceItems: { id: TabType; label: string; icon: React.ReactNode; badge?: string }[] = [
     {
@@ -155,6 +158,39 @@ export const Sidebar: React.FC<SidebarProps> = ({
             })}
           </div>
         </div>
+
+        {/* Platform Administration (Platform Admin only) */}
+        {isPlatformAdmin && (
+          <div>
+            <div className="px-2.5 mb-1.5 text-[10px] font-mono uppercase tracking-wider text-[#98A2B3] font-semibold">
+              Platform Admin
+            </div>
+            <div className="space-y-0.5">
+              <button
+                onClick={() => onTabChange('platform-tenants')}
+                className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-[7px] text-xs font-medium transition ${
+                  currentTab === 'platform-tenants'
+                    ? 'bg-[#E9EEFF] text-[#3157D5] font-semibold'
+                    : 'text-[#667085] hover:text-[#172033] hover:bg-[#FBFAF7]'
+                }`}
+              >
+                <div className="flex items-center space-x-2.5">
+                  <span className={currentTab === 'platform-tenants' ? 'text-[#3157D5]' : 'text-[#667085]'}>
+                    <Building2 className="w-4 h-4" />
+                  </span>
+                  <span>Tenant Directory</span>
+                </div>
+                <span className={`text-[9px] font-mono px-1.5 py-0.2 rounded-[4px] uppercase font-bold ${
+                  currentTab === 'platform-tenants'
+                    ? 'bg-white text-[#3157D5] border border-[#C7D7FE]'
+                    : 'bg-[#7F56D9]/10 text-[#7F56D9] border border-[#7F56D9]/20'
+                }`}>
+                  Admin
+                </span>
+              </button>
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* Security Statement Footer */}

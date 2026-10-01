@@ -11,6 +11,8 @@ import { ArchitectureView } from './components/ArchitectureView';
 import { ProductModal } from './components/ProductModal';
 import { StockAdjustModal } from './components/StockAdjustModal';
 import { LoginPage } from './components/LoginPage';
+import { PlatformTenantsView } from './components/PlatformTenantsView';
+import { AcceptInvitationPage } from './components/AcceptInvitationPage';
 import type { 
   Tenant, 
   User, 
@@ -54,6 +56,17 @@ export const App: React.FC = () => {
   const [transactions, setTransactions] = useState<InventoryTransaction[]>([]);
   const [files, setFiles] = useState<TenantFile[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+
+  // Public Token Invitation Handling
+  const [invitationToken, setInvitationToken] = useState<string | null>(() => {
+    const path = window.location.pathname;
+    if (path.startsWith('/invite/')) {
+      return path.replace('/invite/', '').trim();
+    }
+    const params = new URLSearchParams(window.location.search);
+    return params.get('invite');
+  });
+  const [prefilledLoginEmail, setPrefilledLoginEmail] = useState<string>('');
 
   // Modals
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
@@ -310,11 +323,43 @@ export const App: React.FC = () => {
   // Filter authorized tenants for the current user
   const authorizedTenants = allTenants.filter((t) => currentUser?.authorizedTenants.includes(t.id));
 
+  // If an invitation token is present in the URL, render the AcceptInvitationPage
+  if (invitationToken) {
+    return (
+      <>
+        <AcceptInvitationPage
+          token={invitationToken}
+          onInvitationAccepted={(email) => {
+            setPrefilledLoginEmail(email);
+            setInvitationToken(null);
+            window.history.replaceState({}, '', '/');
+            showToast('Account activated! Sign in with your new password.', 'success');
+          }}
+          onGoToLogin={() => {
+            setInvitationToken(null);
+            window.history.replaceState({}, '', '/');
+          }}
+        />
+        {toast && (
+          <div
+            className="fixed bottom-5 right-5 z-50 px-4 py-2.5 rounded-[7px] shadow-[0_4px_16px_rgba(23,32,51,0.08)] flex items-center space-x-3 text-xs font-medium border bg-white border-[#E5E1D8] text-[#172033] animate-in slide-in-from-bottom-3 duration-150"
+          >
+            <div className={`w-2 h-2 rounded-full shrink-0 ${toast.type === 'success' ? 'bg-[#238B5A]' : toast.type === 'error' ? 'bg-[#D64545]' : 'bg-[#3157D5]'}`} />
+            <span className="text-[#172033] font-medium">{toast.message}</span>
+          </div>
+        )}
+      </>
+    );
+  }
+
   // If unauthenticated, show the enterprise Login Page
   if (!currentUser || !authToken) {
     return (
       <>
-        <LoginPage onLoginSuccess={handleLoginSuccess} />
+        <LoginPage
+          onLoginSuccess={handleLoginSuccess}
+          initialEmail={prefilledLoginEmail}
+        />
         {toast && (
           <div
             className="fixed bottom-5 right-5 z-50 px-4 py-2.5 rounded-[7px] shadow-[0_4px_16px_rgba(23,32,51,0.08)] flex items-center space-x-3 text-xs font-medium border bg-white border-[#E5E1D8] text-[#172033] animate-in slide-in-from-bottom-3 duration-150"
@@ -348,6 +393,7 @@ export const App: React.FC = () => {
           onTabChange={setCurrentTab}
           tenantName={currentTenant?.name}
           tenantId={currentTenant?.id}
+          isPlatformAdmin={currentUser?.role === 'ADMIN'}
         />
 
         {/* Content Area */}
@@ -407,6 +453,8 @@ export const App: React.FC = () => {
           )}
 
           {currentTab === 'architecture' && <ArchitectureView />}
+
+          {currentTab === 'platform-tenants' && <PlatformTenantsView />}
         </main>
       </div>
 
