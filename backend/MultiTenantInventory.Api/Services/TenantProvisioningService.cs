@@ -200,7 +200,7 @@ public class TenantProvisioningService : ITenantProvisioningService
                     Name = request.AdminName.Trim(),
                     Email = normalizedEmail,
                     Role = "MANAGER", // Tenant-level administrative manager
-                    PasswordHash = string.Empty, // Empty until invitation is accepted
+                    PasswordHash = PasswordHasher.Hash(DbSeeder.DefaultDemoPassword), // Demo password active until customized via invitation
                     CreatedAt = DateTime.UtcNow
                 };
                 _dbContext.Users.Add(user);

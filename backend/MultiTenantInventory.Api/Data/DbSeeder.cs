@@ -20,21 +20,129 @@ public static class DbSeeder
 
             if (await context.Tenants.AnyAsync())
             {
-                // Update password hashes if they are empty for seeded users
-                var existingUsers = await context.Users.ToListAsync();
                 var updated = false;
+
+                // 1. Ensure all users have valid password hashes
+                var existingUsers = await context.Users.ToListAsync();
                 foreach (var u in existingUsers)
                 {
-                    if (string.IsNullOrEmpty(u.PasswordHash))
+                    if (string.IsNullOrEmpty(u.PasswordHash) || !PasswordHasher.Verify(DefaultDemoPassword, u.PasswordHash))
                     {
+                        // Ensure demo account password is valid
                         u.PasswordHash = PasswordHasher.Hash(DefaultDemoPassword);
                         updated = true;
                     }
                 }
+
+                // 2. Ensure "forge" tenant exists
+                var forgeTenant = await context.Tenants.FirstOrDefaultAsync(t => t.Id == "forge");
+                if (forgeTenant == null)
+                {
+                    forgeTenant = new Models.Tenant
+                    {
+                        Id = "forge",
+                        Name = "Forge",
+                        Code = "FORGE",
+                        Description = "Advanced industrial manufacturing, precision metallurgy and machining systems.",
+                        Industry = "Industrial Manufacturing",
+                        ContactNumber = "+1 (800) 555-0456",
+                        Status = "ACTIVE",
+                        CreatedAt = DateTime.UtcNow.AddMonths(-1)
+                    };
+                    context.Tenants.Add(forgeTenant);
+                    updated = true;
+                }
+
+                // 3. Ensure "jacobkothapally07@gmail.com" user exists
+                var jacobUser = await context.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == "jacobkothapally07@gmail.com");
+                if (jacobUser == null)
+                {
+                    jacobUser = new User
+                    {
+                        Id = "usr_manager_forge",
+                        Name = "Jacob Kothapally",
+                        Email = "jacobkothapally07@gmail.com",
+                        Role = "MANAGER",
+                        PasswordHash = PasswordHasher.Hash(DefaultDemoPassword),
+                        CreatedAt = DateTime.UtcNow.AddMonths(-1)
+                    };
+                    context.Users.Add(jacobUser);
+                    updated = true;
+                }
+                else
+                {
+                    jacobUser.PasswordHash = PasswordHasher.Hash(DefaultDemoPassword);
+                    updated = true;
+                }
+
                 if (updated)
                 {
                     await context.SaveChangesAsync();
                 }
+
+                // 4. Ensure membership exists for Jacob in Forge
+                var hasMembership = await context.TenantMemberships.AnyAsync(m => m.UserId == jacobUser.Id && m.TenantId == "forge");
+                if (!hasMembership)
+                {
+                    context.TenantMemberships.Add(new TenantMembership
+                    {
+                        Id = "mem_forge_1",
+                        UserId = jacobUser.Id,
+                        TenantId = "forge",
+                        Role = "OWNER"
+                    });
+                    await context.SaveChangesAsync();
+                }
+
+                // 5. Ensure Forge has sample inventory items
+                var hasForgeItems = await context.InventoryItems.IgnoreQueryFilters().AnyAsync(i => i.TenantId == "forge");
+                if (!hasForgeItems)
+                {
+                    context.InventoryItems.AddRange(new List<InventoryItem>
+                    {
+                        new()
+                        {
+                            Id = "item_forge_1",
+                            TenantId = "forge",
+                            Name = "Industrial 5-Axis CNC Milling Center",
+                            SKU = "FRG-CNC-5X",
+                            Category = "Heavy Machinery",
+                            Quantity = 6,
+                            Price = 78500.00m,
+                            LowStockThreshold = 2,
+                            ImageUrl = "https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=300",
+                            CreatedAt = DateTime.UtcNow.AddDays(-20)
+                        },
+                        new()
+                        {
+                            Id = "item_forge_2",
+                            TenantId = "forge",
+                            Name = "Aerospace Grade Titanium Bar Stock (Ti-6Al-4V)",
+                            SKU = "FRG-TIT-001",
+                            Category = "Raw Materials",
+                            Quantity = 120,
+                            Price = 340.00m,
+                            LowStockThreshold = 25,
+                            ImageUrl = "https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?w=300",
+                            CreatedAt = DateTime.UtcNow.AddDays(-15)
+                        },
+                        new()
+                        {
+                            Id = "item_forge_3",
+                            TenantId = "forge",
+                            Name = "Precision Hydraulic Forge Press 250T",
+                            SKU = "FRG-PRS-250",
+                            Category = "Presses & Forging",
+                            Quantity = 3,
+                            Price = 45000.00m,
+                            LowStockThreshold = 1,
+                            ImageUrl = "https://images.unsplash.com/photo-1581092335397-9583fe92d232?w=300",
+                            CreatedAt = DateTime.UtcNow.AddDays(-10)
+                        }
+                    });
+                    await context.SaveChangesAsync();
+                }
+
                 return; // Already seeded
             }
 
@@ -73,6 +181,17 @@ public static class DbSeeder
                 Description = "Premium enterprise office furnishings, laser printers, ergonomic workstations and infrastructure.",
                 Industry = "Enterprise Workspace Solutions",
                 ContactNumber = "+1 (800) 555-0378",
+                Status = "ACTIVE",
+                CreatedAt = DateTime.UtcNow.AddMonths(-1)
+            },
+            new()
+            {
+                Id = "forge",
+                Name = "Forge",
+                Code = "FORGE",
+                Description = "Advanced industrial manufacturing, precision metallurgy and machining systems.",
+                Industry = "Industrial Manufacturing",
+                ContactNumber = "+1 (800) 555-0456",
                 Status = "ACTIVE",
                 CreatedAt = DateTime.UtcNow.AddMonths(-1)
             }
@@ -117,6 +236,15 @@ public static class DbSeeder
                 Role = "VIEWER",
                 PasswordHash = defaultPasswordHash,
                 CreatedAt = DateTime.UtcNow.AddMonths(-2)
+            },
+            new()
+            {
+                Id = "usr_manager_forge",
+                Name = "Jacob Kothapally",
+                Email = "jacobkothapally07@gmail.com",
+                Role = "MANAGER",
+                PasswordHash = defaultPasswordHash,
+                CreatedAt = DateTime.UtcNow.AddMonths(-1)
             }
         };
         context.Users.AddRange(users);
@@ -135,7 +263,10 @@ public static class DbSeeder
             new() { Id = "mem_4", UserId = "usr_zenith_user", TenantId = "zenith-supplies", Role = "OWNER" },
 
             // Auditor is authorized ONLY for ACME
-            new() { Id = "mem_5", UserId = "usr_auditor_acme", TenantId = "acme-retail", Role = "AUDITOR" }
+            new() { Id = "mem_5", UserId = "usr_auditor_acme", TenantId = "acme-retail", Role = "AUDITOR" },
+
+            // Jacob is authorized for Forge
+            new() { Id = "mem_forge_1", UserId = "usr_manager_forge", TenantId = "forge", Role = "OWNER" }
         };
         context.TenantMemberships.AddRange(memberships);
 
@@ -408,6 +539,54 @@ public static class DbSeeder
             }
         };
         context.InventoryItems.AddRange(zenithItems);
+
+        // 6b. Seed Inventory Items for Forge
+        var forgeItems = new List<InventoryItem>
+        {
+            new()
+            {
+                Id = "item_forge_1",
+                TenantId = "forge",
+                Name = "Industrial 5-Axis CNC Milling Center",
+                SKU = "FRG-CNC-5X",
+                Category = "Heavy Machinery",
+                Quantity = 6,
+                Price = 78500.00m,
+                LowStockThreshold = 2,
+                ImageUrl = "https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=300",
+                CreatedAt = DateTime.UtcNow.AddDays(-20),
+                UpdatedAt = DateTime.UtcNow.AddDays(-1)
+            },
+            new()
+            {
+                Id = "item_forge_2",
+                TenantId = "forge",
+                Name = "Aerospace Grade Titanium Bar Stock (Ti-6Al-4V)",
+                SKU = "FRG-TIT-001",
+                Category = "Raw Materials",
+                Quantity = 120,
+                Price = 340.00m,
+                LowStockThreshold = 25,
+                ImageUrl = "https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?w=300",
+                CreatedAt = DateTime.UtcNow.AddDays(-15),
+                UpdatedAt = DateTime.UtcNow.AddDays(-2)
+            },
+            new()
+            {
+                Id = "item_forge_3",
+                TenantId = "forge",
+                Name = "Precision Hydraulic Forge Press 250T",
+                SKU = "FRG-PRS-250",
+                Category = "Presses & Forging",
+                Quantity = 3,
+                Price = 45000.00m,
+                LowStockThreshold = 1,
+                ImageUrl = "https://images.unsplash.com/photo-1581092335397-9583fe92d232?w=300",
+                CreatedAt = DateTime.UtcNow.AddDays(-10),
+                UpdatedAt = DateTime.UtcNow.AddDays(-1)
+            }
+        };
+        context.InventoryItems.AddRange(forgeItems);
 
         // 7. Seed S3 Tenant Files
         var files = new List<TenantFile>

@@ -78,6 +78,15 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, initialEma
             tenantNames: ['Acme Retail'],
             tenantIds: ['acme-retail'],
             description: 'Compliance Auditor (Read-Only Access to Acme Retail)'
+          },
+          {
+            id: 'usr_manager_forge',
+            name: 'Jacob Kothapally',
+            email: 'jacobkothapally07@gmail.com',
+            role: 'MANAGER',
+            tenantNames: ['Forge'],
+            tenantIds: ['forge'],
+            description: 'Operations Lead (Single-Tenant Access to Forge)'
           }
         ]);
       }
