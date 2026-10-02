@@ -134,7 +134,7 @@ public class TenantPresenceTracker : ITenantPresenceTracker
             return new PresenceUpdateEvent
             {
                 TenantId = normalizedTenant,
-                ActiveUsersCount = uniqueUsers.Count,
+                ActiveUsersCount = map.Count,
                 ActiveUsers = uniqueUsers
             };
         }

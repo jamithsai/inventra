@@ -159,7 +159,11 @@ public class InventoryHub : Hub<IInventoryHubClient>
     private async Task<bool> IsUserAuthorizedForTenantAsync(string userId, string tenantId)
     {
         // Platform Admins can observe all tenants
-        var isPlatformAdmin = Context.User?.IsInRole("PLATFORM_ADMIN") == true ||
+        var isPlatformAdmin = Context.User?.IsInRole("ADMIN") == true ||
+                              Context.User?.IsInRole("PLATFORM_ADMIN") == true ||
+                              Context.User?.HasClaim(ClaimTypes.Role, "ADMIN") == true ||
+                              Context.User?.HasClaim(ClaimTypes.Role, "PLATFORM_ADMIN") == true ||
+                              Context.User?.HasClaim("role", "ADMIN") == true ||
                               Context.User?.HasClaim("role", "PLATFORM_ADMIN") == true ||
                               Context.User?.HasClaim("isPlatformAdmin", "true") == true;
 
