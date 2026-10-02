@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Navbar } from './components/Navbar';
 import { Sidebar } from './components/Sidebar';
 import type { TabType } from './components/Sidebar';
@@ -23,7 +23,11 @@ import type {
   TenantFile, 
   AuditLog, 
   CreateInventoryItemDto, 
-  UpdateStockDto 
+  UpdateStockDto,
+  UserPresence,
+  PresenceUpdateEvent,
+  InventoryUpdateEvent,
+  FileUpdateEvent
 } from './types';
 import { 
   authApi, 
@@ -37,6 +41,7 @@ import {
   clearStoredAuth,
   onAuthStateChanged
 } from './services/api';
+import { realtimeService } from './services/signalr';
 
 export const App: React.FC = () => {
   // Navigation & UI State
@@ -49,6 +54,13 @@ export const App: React.FC = () => {
   const [authToken, setAuthToken] = useState<string>('');
   const [allTenants, setAllTenants] = useState<Tenant[]>([]);
   const [currentTenant, setCurrentTenant] = useState<Tenant | null>(null);
+
+  // Real-time Live Sync State
+  const [isRealtimeConnected, setIsRealtimeConnected] = useState(false);
+  const [activeUsersCount, setActiveUsersCount] = useState(1);
+  const [activeUsers, setActiveUsers] = useState<UserPresence[]>([]);
+  const currentUserRef = useRef<User | null>(null);
+  currentUserRef.current = currentUser;
 
   // Tenant-Scoped Data
   const [items, setItems] = useState<InventoryItem[]>([]);
@@ -167,7 +179,88 @@ export const App: React.FC = () => {
     };
   }, []);
 
-  // 3. Handle Successful Login
+  // 3. Connect and Manage SignalR Real-Time Subscriptions
+  useEffect(() => {
+    if (!authToken || !currentTenant?.id) {
+      realtimeService.stop();
+      setIsRealtimeConnected(false);
+      return;
+    }
+
+    realtimeService.start(authToken, currentTenant.id);
+
+    const unsubStatus = realtimeService.onConnectionStatus((connected) => {
+      setIsRealtimeConnected(connected);
+    });
+
+    const unsubPresence = realtimeService.onPresence((presence: PresenceUpdateEvent) => {
+      setActiveUsersCount(presence.activeUsersCount);
+      setActiveUsers(presence.activeUsers);
+    });
+
+    const unsubInventory = realtimeService.onInventoryUpdate((evt: InventoryUpdateEvent) => {
+      const isSelf = evt.initiatorUserId === currentUserRef.current?.id;
+
+      if (evt.type === 'CREATED' && evt.item) {
+        setItems((prev) => [evt.item!, ...prev.filter((i) => i.id !== evt.item!.id)]);
+        if (!isSelf) {
+          showToast(`⚡ Real-Time: ${evt.initiatorName} created "${evt.item.name}" (SKU: ${evt.item.sku})`, 'info');
+        }
+      } else if (evt.type === 'UPDATED' && evt.item) {
+        setItems((prev) => prev.map((i) => (i.id === evt.item!.id ? evt.item! : i)));
+        if (!isSelf) {
+          showToast(`⚡ Real-Time: ${evt.initiatorName} updated product "${evt.item.name}"`, 'info');
+        }
+      } else if (evt.type === 'DELETED') {
+        setItems((prev) => prev.filter((i) => i.id !== evt.itemId));
+        if (!isSelf) {
+          showToast(`⚡ Real-Time: ${evt.initiatorName} deleted "${evt.itemName || 'Product'}"`, 'info');
+        }
+      } else if (evt.type === 'STOCK_ADJUSTED' && evt.item) {
+        setItems((prev) => prev.map((i) => (i.id === evt.item!.id ? evt.item! : i)));
+        if (!isSelf) {
+          showToast(`⚡ Real-Time: ${evt.initiatorName} adjusted stock for "${evt.item.name}" → ${evt.item.quantity}`, 'info');
+        }
+      }
+
+      // Live update dashboard stats
+      inventoryApi.getStats().then((s) => setStats(s)).catch(() => {});
+    });
+
+    const unsubTx = realtimeService.onTransaction((tx: InventoryTransaction) => {
+      setTransactions((prev) => [tx, ...prev.filter((t) => t.id !== tx.id)].slice(0, 50));
+    });
+
+    const unsubAudit = realtimeService.onAuditLog((log: AuditLog) => {
+      setAuditLogs((prev) => [log, ...prev.filter((l) => l.id !== log.id)].slice(0, 100));
+    });
+
+    const unsubFile = realtimeService.onFileUpdate((evt: FileUpdateEvent) => {
+      const isSelf = evt.initiatorUserId === currentUserRef.current?.id;
+      if (evt.action === 'UPLOADED' && evt.file) {
+        setFiles((prev) => [evt.file!, ...prev.filter((f) => f.id !== evt.file!.id)]);
+        if (!isSelf) {
+          showToast(`⚡ Real-Time: ${evt.initiatorName} uploaded asset "${evt.fileName}"`, 'info');
+        }
+      } else if (evt.action === 'DELETED') {
+        setFiles((prev) => prev.filter((f) => f.id !== evt.fileId));
+        if (!isSelf) {
+          showToast(`⚡ Real-Time: ${evt.initiatorName} deleted file "${evt.fileName}"`, 'info');
+        }
+      }
+    });
+
+    return () => {
+      unsubStatus();
+      unsubPresence();
+      unsubInventory();
+      unsubTx();
+      unsubAudit();
+      unsubFile();
+    };
+  }, [authToken, currentTenant?.id]);
+
+  // 4. Handle Successful Login
   const handleLoginSuccess = async (data: LoginResponse) => {
     setLoading(true);
     try {
@@ -195,8 +288,9 @@ export const App: React.FC = () => {
     }
   };
 
-  // 4. Handle Logout
+  // 5. Handle Logout
   const handleLogout = () => {
+    realtimeService.stop();
     authApi.logout();
     setCurrentUser(null);
     setAuthToken('');
@@ -206,10 +300,11 @@ export const App: React.FC = () => {
     setAuditLogs([]);
     setTransactions([]);
     setStats(null);
+    setIsRealtimeConnected(false);
     showToast('Signed out successfully', 'info');
   };
 
-  // 5. Handle Switching Tenant Context
+  // 6. Handle Switching Tenant Context
   const handleSelectTenant = async (tenantId: string) => {
     const targetTenant = allTenants.find((t) => t.id === tenantId);
     if (!targetTenant) return;
@@ -237,6 +332,9 @@ export const App: React.FC = () => {
       setTransactions(txRes);
       setFiles(filesRes);
       setAuditLogs(auditRes);
+
+      // Switch SignalR room
+      await realtimeService.switchTenant(targetTenant.id);
       showToast(`Switched workspace to ${targetTenant.name}`, 'success');
     } catch (err: any) {
       const status = err.response?.status;
@@ -253,7 +351,7 @@ export const App: React.FC = () => {
     }
   };
 
-  // 6. Product Management CRUD Handlers
+  // 7. Product Management CRUD Handlers
   const handleOpenAddModal = () => {
     setEditingItem(null);
     setIsProductModalOpen(true);
@@ -286,7 +384,7 @@ export const App: React.FC = () => {
     }
   };
 
-  // 7. Stock Level Adjustments
+  // 8. Stock Level Adjustments
   const handleOpenStockModal = (item: InventoryItem) => {
     setStockItem(item);
     setIsStockModalOpen(true);
@@ -298,7 +396,7 @@ export const App: React.FC = () => {
     await fetchTenantData();
   };
 
-  // 8. S3 File Upload & Delete
+  // 9. S3 File Upload & Delete
   const handleUploadFile = async (file: File, associatedItemId?: string) => {
     try {
       await filesApi.upload(file, associatedItemId);
@@ -374,7 +472,7 @@ export const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#F7F5F0] text-[#172033] flex flex-col selection:bg-[#E9EEFF] selection:text-[#3157D5]">
-      {/* Top Navigation Bar with Filtered Tenant Workspaces and User Profile */}
+      {/* Top Navigation Bar with Real-Time Live Sync Indicator & Presence */}
       <Navbar
         currentTenant={currentTenant}
         authorizedTenants={authorizedTenants.length > 0 ? authorizedTenants : allTenants}
@@ -383,6 +481,9 @@ export const App: React.FC = () => {
         onLogout={handleLogout}
         loading={loading}
         onRefresh={() => fetchTenantData()}
+        isRealtimeConnected={isRealtimeConnected}
+        activeUsersCount={activeUsersCount}
+        activeUsers={activeUsers}
       />
 
       {/* Main Body */}

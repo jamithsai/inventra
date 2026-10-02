@@ -1,0 +1,262 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "INVENTRA Multi-Tenant SaaS Platform Architecture",
+    "subtitle": "Zero-Trust Tenant Isolation, Scoped Context & ACID Provisioning",
+    "output": ".archify/architecture-inventra-overview-20261001-104500/inventra-overview.html",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/jamithsai/inventra.git",
+      "provider": "github",
+      "link_mode": "web",
+      "revision": "14f91bd943bf45c24a53544a43cb9e2f237610d5"
+    }
+  },
+  "components": [
+    {
+      "id": "fe-spa",
+      "type": "frontend",
+      "label": "React 19 SPA",
+      "sublabel": "Vite + Tailwind CSS",
+      "tag": "Tenant Interceptor",
+      "pos": [40, 260],
+      "size": [160, 90],
+      "sources": [
+        { "path": "frontend/src/App.tsx", "line": 40, "end_line": 95, "label": "App Navigation & Routing" },
+        { "path": "frontend/src/services/api.ts", "line": 113, "end_line": 130, "label": "Axios Auth & Tenant Interceptors" }
+      ]
+    },
+    {
+      "id": "auth-ctrl",
+      "type": "security",
+      "label": "Auth & Identity",
+      "sublabel": "PBKDF2-SHA256 & JWT",
+      "tag": "Zero-Trust",
+      "pos": [380, 100],
+      "size": [180, 80],
+      "sources": [
+        { "path": "backend/MultiTenantInventory.Api/Controllers/AuthController.cs", "line": 34, "end_line": 78, "label": "Login & Token Issuance" },
+        { "path": "backend/MultiTenantInventory.Api/Services/AuthService.cs", "line": 45, "end_line": 105, "label": "JWT & Password Hashing" }
+      ]
+    },
+    {
+      "id": "tenant-mw",
+      "type": "security",
+      "label": "Tenant Resolution MW",
+      "sublabel": "X-Tenant-ID & Membership Gate",
+      "tag": "403 Enforcement",
+      "pos": [380, 260],
+      "size": [180, 90],
+      "sources": [
+        { "path": "backend/MultiTenantInventory.Api/Middleware/TenantResolutionMiddleware.cs", "line": 40, "end_line": 115, "label": "Tenant Validation & Suspension Check" }
+      ]
+    },
+    {
+      "id": "tenant-ctx",
+      "type": "backend",
+      "label": "Scoped TenantContext",
+      "sublabel": "ITenantContext DI Container",
+      "tag": "Request-Scoped",
+      "pos": [740, 260],
+      "size": [180, 90],
+      "sources": [
+        { "path": "backend/MultiTenantInventory.Api/Tenant/TenantContext.cs", "line": 8, "end_line": 24, "label": "Scoped Tenant Context Holder" }
+      ]
+    },
+    {
+      "id": "platform-svc",
+      "type": "backend",
+      "label": "Provisioning Service",
+      "sublabel": "ACID Transaction & Invites",
+      "tag": "Platform Admin",
+      "pos": [740, 100],
+      "size": [180, 80],
+      "sources": [
+        { "path": "backend/MultiTenantInventory.Api/Services/TenantProvisioningService.cs", "line": 110, "end_line": 210, "label": "Transactional Tenant Creation" },
+        { "path": "backend/MultiTenantInventory.Api/Controllers/PlatformTenantsController.cs", "line": 28, "end_line": 75, "label": "Platform Admin API" }
+      ]
+    },
+    {
+      "id": "inv-svc",
+      "type": "backend",
+      "label": "Inventory Service",
+      "sublabel": "Stock CRUD & Auditing",
+      "tag": "Tenant-Isolated",
+      "pos": [740, 430],
+      "size": [180, 80],
+      "sources": [
+        { "path": "backend/MultiTenantInventory.Api/Services/InventoryService.cs", "line": 25, "end_line": 95, "label": "Tenant-Isolated Inventory CRUD" }
+      ]
+    },
+    {
+      "id": "ef-dbcontext",
+      "type": "database",
+      "label": "EF Core AppDbContext",
+      "sublabel": "Global Query Filters",
+      "tag": "TenantId == Context",
+      "pos": [1110, 260],
+      "size": [190, 90],
+      "sources": [
+        { "path": "backend/MultiTenantInventory.Api/Data/AppDbContext.cs", "line": 88, "end_line": 125, "label": "Global Query Filter Definitions" }
+      ]
+    },
+    {
+      "id": "s3-storage",
+      "type": "cloud",
+      "label": "AWS S3 Cloud Storage",
+      "sublabel": "tenants/{tenantId}/products/*",
+      "tag": "Partitioned Keys",
+      "pos": [1110, 430],
+      "size": [190, 80],
+      "sources": [
+        { "path": "backend/MultiTenantInventory.Api/Storage/S3FileStorageService.cs", "line": 42, "end_line": 85, "label": "S3 Prefix Partitioning" }
+      ]
+    },
+    {
+      "id": "sql-db",
+      "type": "database",
+      "label": "Relational Database",
+      "sublabel": "SQLite / PostgreSQL",
+      "tag": "ACID Persistence",
+      "pos": [1480, 200],
+      "size": [180, 150],
+      "sources": [
+        { "path": "backend/MultiTenantInventory.Api/Data/AppDbContext.cs", "line": 17, "end_line": 25, "label": "Entity DbSets & Relations" }
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Client Perimeter (Browser)",
+      "wraps": ["fe-spa"]
+    },
+    {
+      "kind": "security-group",
+      "label": "API Security & Gateway Perimeter",
+      "wraps": ["auth-ctrl", "tenant-mw"]
+    },
+    {
+      "kind": "security-group",
+      "label": "Scoped Multi-Tenant Application Core",
+      "wraps": ["tenant-ctx", "platform-svc", "inv-svc", "ef-dbcontext"]
+    },
+    {
+      "kind": "region",
+      "label": "AWS Cloud Storage Boundary",
+      "wraps": ["s3-storage"]
+    },
+    {
+      "kind": "region",
+      "label": "Relational Data Persistence Tier",
+      "wraps": ["sql-db"]
+    }
+  ],
+  "connections": [
+    {
+      "id": "conn-login",
+      "from": "fe-spa",
+      "to": "auth-ctrl",
+      "label": "POST /api/auth/login",
+      "variant": "security",
+      "fromSide": "top",
+      "toSide": "left",
+      "via": [[120, 140]]
+    },
+    {
+      "id": "conn-api-req",
+      "from": "fe-spa",
+      "to": "tenant-mw",
+      "label": "Bearer JWT + X-Tenant-ID",
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "conn-mw-ctx",
+      "from": "tenant-mw",
+      "to": "tenant-ctx",
+      "label": "Set verified TenantId",
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "conn-ctx-ef",
+      "from": "tenant-ctx",
+      "to": "ef-dbcontext",
+      "label": "Scoped filter context",
+      "variant": "default",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "conn-inv-ef",
+      "from": "inv-svc",
+      "to": "ef-dbcontext",
+      "label": "Scoped CRUD operations",
+      "variant": "default",
+      "fromSide": "top",
+      "toSide": "bottom",
+      "via": [[830, 390], [1050, 390], [1205, 390]]
+    },
+    {
+      "id": "conn-inv-s3",
+      "from": "inv-svc",
+      "to": "s3-storage",
+      "label": "tenants/{tenantId}/* upload",
+      "variant": "dashed",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "conn-ef-sql",
+      "from": "ef-dbcontext",
+      "to": "sql-db",
+      "label": "Tenant-filtered SQL",
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "conn-platform-sql",
+      "from": "platform-svc",
+      "to": "sql-db",
+      "label": "Atomic DB transaction",
+      "variant": "security",
+      "fromSide": "right",
+      "toSide": "top",
+      "via": [[1380, 140], [1570, 140]]
+    }
+  ],
+  "cards": [
+    {
+      "dot": "rose",
+      "title": "Zero-Trust Tenant Isolation",
+      "items": [
+        "X-Tenant-ID header verified against database TenantMemberships per request",
+        "EF Core Global Query Filters automatically inject WHERE TenantId = @currentTenantId",
+        "Suspended tenants and cross-tenant spoofing requests instantly return HTTP 403 Forbidden"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Atomic Platform Provisioning",
+      "items": [
+        "ACID database transaction guarantees all-or-nothing tenant and admin provisioning",
+        "Secure HMAC SHA-256 invitation tokens protect initial administrator onboarding",
+        "Role-Based Access Control restricts tenant creation strictly to Platform Admins"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Partitioned Cloud Object Storage",
+      "items": [
+        "All S3 keys strictly namespaced to tenants/{tenantId}/products/{guid}_{file}",
+        "Storage operations enforce current tenant context validation before transfer",
+        "Cascade deletion cleans up S3 objects upon item deletion"
+      ]
+    }
+  ]
+}

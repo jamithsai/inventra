@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using MultiTenantInventory.Api.Data;
+using MultiTenantInventory.Api.Hubs;
 using MultiTenantInventory.Api.Middleware;
 using MultiTenantInventory.Api.Services;
 using MultiTenantInventory.Api.Storage;
@@ -16,11 +17,12 @@ var builder = WebApplication.CreateBuilder(args);
 var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
 builder.WebHost.UseUrls($"http://*:{port}");
 
-// 1. Configure Services & Controllers
+// 1. Configure Services, Controllers & SignalR
 builder.Services.AddControllers();
+builder.Services.AddSignalR();
 builder.Services.AddEndpointsApiExplorer();
 
-// 2. Configure JWT Bearer Authentication
+// 2. Configure JWT Bearer Authentication (including SignalR WebSockets query string support)
 var jwtKey = builder.Configuration["Jwt:Key"] ?? AuthService.DefaultJwtSecret;
 var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? AuthService.DefaultIssuer;
 var jwtAudience = builder.Configuration["Jwt:Audience"] ?? AuthService.DefaultAudience;
@@ -43,6 +45,21 @@ builder.Services.AddAuthentication(options =>
         ValidateLifetime = true,
         ClockSkew = TimeSpan.FromMinutes(1)
     };
+
+    // Support JWT extraction for SignalR WebSocket connections
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            var accessToken = context.Request.Query["access_token"];
+            var path = context.HttpContext.Request.Path;
+            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+            {
+                context.Token = accessToken;
+            }
+            return Task.CompletedTask;
+        }
+    };
 });
 builder.Services.AddAuthorization();
 
@@ -53,7 +70,7 @@ builder.Services.AddSwaggerGen(c =>
     {
         Title = "Inventra Multi-Tenant Inventory Platform API",
         Version = "v1",
-        Description = "Enterprise multi-tenant inventory platform featuring JWT Authentication, EF Core Global Query Filters, Tenant Middleware, and AWS S3 key isolation."
+        Description = "Enterprise multi-tenant inventory platform featuring JWT Authentication, SignalR Real-Time Sync, EF Core Global Query Filters, Tenant Middleware, and AWS S3 key isolation."
     });
 
     // Add Bearer JWT Token Support
@@ -95,11 +112,13 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// 4. Register Scoped Tenant Context, Resolver, Auth & Provisioning Services
+// 4. Register Scoped Tenant Context, Resolver, Auth, Real-Time & Provisioning Services
 builder.Services.AddScoped<ITenantContext, TenantContext>();
 builder.Services.AddScoped<ITenantResolver, TenantResolver>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITenantProvisioningService, TenantProvisioningService>();
+builder.Services.AddSingleton<ITenantPresenceTracker, TenantPresenceTracker>();
+builder.Services.AddScoped<IInventoryNotificationService, InventoryNotificationService>();
 
 // 5. Register Database with SQLite & Scoped AppDbContext
 var dbPath = Path.Combine(AppContext.BaseDirectory, "multi_tenant_inventory.db");
@@ -127,14 +146,15 @@ builder.Services.AddScoped<IFileStorageService, S3FileStorageService>();
 // 7. Register Business Services
 builder.Services.AddScoped<IInventoryService, InventoryService>();
 
-// 8. CORS Configuration
+// 8. CORS Configuration with WebSockets / SignalR Credentials support
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
     {
-        policy.AllowAnyOrigin()
+        policy.SetIsOriginAllowed(_ => true)
               .AllowAnyMethod()
-              .AllowAnyHeader();
+              .AllowAnyHeader()
+              .AllowCredentials();
     });
 });
 
@@ -166,7 +186,9 @@ app.UseAuthorization();
 // 12. Register Tenant Resolution Middleware (Zero Trust on X-Tenant-ID)
 app.UseMiddleware<TenantResolutionMiddleware>();
 
+// 13. Map Controller & SignalR Hub Endpoints
 app.MapControllers();
+app.MapHub<InventoryHub>("/hubs/inventory");
 
 app.Run();
 

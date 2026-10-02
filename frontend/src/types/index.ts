@@ -211,3 +211,40 @@ export interface TenantMember {
   role: string;
   joinedAt: string;
 }
+
+// Real-Time SignalR Event Types
+export interface InventoryUpdateEvent {
+  type: 'CREATED' | 'UPDATED' | 'DELETED' | 'STOCK_ADJUSTED';
+  item?: InventoryItem;
+  itemId?: string;
+  itemName?: string;
+  transaction?: InventoryTransaction;
+  initiatorUserId: string;
+  initiatorName: string;
+  timestamp: string;
+}
+
+export interface UserPresence {
+  userId: string;
+  userName: string;
+  email: string;
+  role: string;
+  connectedAt: string;
+}
+
+export interface PresenceUpdateEvent {
+  tenantId: string;
+  activeUsersCount: number;
+  activeUsers: UserPresence[];
+}
+
+export interface FileUpdateEvent {
+  action: 'UPLOADED' | 'DELETED';
+  fileId: string;
+  fileName: string;
+  file?: TenantFile;
+  initiatorUserId: string;
+  initiatorName: string;
+  timestamp: string;
+}
+

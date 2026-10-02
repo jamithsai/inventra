@@ -145,7 +145,8 @@ public class TenantResolutionMiddleware
             path.StartsWith("/api/auth") ||
             path.StartsWith("/api/platform") ||
             path.StartsWith("/api/invitations") ||
-            path.StartsWith("/api/security/simulate-attack"))
+            path.StartsWith("/api/security/simulate-attack") ||
+            path.StartsWith("/hubs"))
         {
             return true;
         }

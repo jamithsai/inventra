@@ -12,17 +12,20 @@ public class InventoryService : IInventoryService
     private readonly AppDbContext _dbContext;
     private readonly ITenantContext _tenantContext;
     private readonly IFileStorageService _fileStorageService;
+    private readonly IInventoryNotificationService _notificationService;
     private readonly ILogger<InventoryService> _logger;
 
     public InventoryService(
         AppDbContext dbContext, 
         ITenantContext tenantContext, 
         IFileStorageService fileStorageService,
+        IInventoryNotificationService notificationService,
         ILogger<InventoryService> logger)
     {
         _dbContext = dbContext;
         _tenantContext = tenantContext;
         _fileStorageService = fileStorageService;
+        _notificationService = notificationService;
         _logger = logger;
     }
 
@@ -92,7 +95,7 @@ public class InventoryService : IInventoryService
         _dbContext.InventoryItems.Add(item);
 
         // Record Initial Transaction
-        _dbContext.InventoryTransactions.Add(new InventoryTransaction
+        var initialTx = new InventoryTransaction
         {
             Id = Guid.NewGuid().ToString(),
             TenantId = tenantId,
@@ -102,10 +105,11 @@ public class InventoryService : IInventoryService
             Quantity = item.Quantity,
             Note = "Initial stock creation",
             CreatedAt = DateTime.UtcNow
-        });
+        };
+        _dbContext.InventoryTransactions.Add(initialTx);
 
         // Record Audit Log
-        _dbContext.AuditLogs.Add(new AuditLog
+        var auditLog = new AuditLog
         {
             Id = Guid.NewGuid().ToString(),
             TenantId = tenantId,
@@ -115,9 +119,18 @@ public class InventoryService : IInventoryService
             EntityType = "InventoryItem",
             EntityId = item.Id,
             Details = $"Created product '{item.Name}' with SKU '{item.SKU}' and initial stock of {item.Quantity}."
-        });
+        };
+        _dbContext.AuditLogs.Add(auditLog);
 
         await _dbContext.SaveChangesAsync(cancellationToken);
+
+        // Real-time broadcast to all tenant users
+        var userId = _tenantContext.CurrentUserId ?? "system";
+        var userName = _tenantContext.CurrentUserName ?? "Admin";
+        _ = _notificationService.NotifyItemCreatedAsync(tenantId, item, userId, userName);
+        _ = _notificationService.NotifyTransactionAsync(tenantId, initialTx);
+        _ = _notificationService.NotifyAuditLogAsync(tenantId, auditLog);
+
         return item;
     }
 
@@ -127,45 +140,62 @@ public class InventoryService : IInventoryService
         if (item == null)
             return null;
 
+        var tenantId = _tenantContext.CurrentTenantId!;
+        var userId = _tenantContext.CurrentUserId ?? "system";
+        var userName = _tenantContext.CurrentUserName ?? "Admin";
+
         if (!string.IsNullOrWhiteSpace(dto.Name)) item.Name = dto.Name.Trim();
         if (!string.IsNullOrWhiteSpace(dto.SKU)) item.SKU = dto.SKU.Trim().ToUpper();
         if (!string.IsNullOrWhiteSpace(dto.Category)) item.Category = dto.Category.Trim();
         if (dto.Price.HasValue) item.Price = dto.Price.Value;
         if (dto.LowStockThreshold.HasValue) item.LowStockThreshold = dto.LowStockThreshold.Value;
         if (dto.ImageUrl != null) item.ImageUrl = dto.ImageUrl;
+
+        InventoryTransaction? quantityTx = null;
         if (dto.Quantity.HasValue && dto.Quantity.Value != item.Quantity)
         {
             var diff = dto.Quantity.Value - item.Quantity;
             item.Quantity = dto.Quantity.Value;
 
-            _dbContext.InventoryTransactions.Add(new InventoryTransaction
+            quantityTx = new InventoryTransaction
             {
                 Id = Guid.NewGuid().ToString(),
-                TenantId = _tenantContext.CurrentTenantId!,
+                TenantId = tenantId,
                 InventoryItemId = item.Id,
                 ProductName = item.Name,
                 Type = diff > 0 ? "IN" : "OUT",
                 Quantity = Math.Abs(diff),
                 Note = "Direct quantity edit",
                 CreatedAt = DateTime.UtcNow
-            });
+            };
+            _dbContext.InventoryTransactions.Add(quantityTx);
         }
 
         item.UpdatedAt = DateTime.UtcNow;
 
-        _dbContext.AuditLogs.Add(new AuditLog
+        var auditLog = new AuditLog
         {
             Id = Guid.NewGuid().ToString(),
-            TenantId = _tenantContext.CurrentTenantId!,
-            UserId = _tenantContext.CurrentUserId ?? "system",
-            UserName = _tenantContext.CurrentUserName ?? "Admin",
+            TenantId = tenantId,
+            UserId = userId,
+            UserName = userName,
             Action = "PRODUCT_UPDATED",
             EntityType = "InventoryItem",
             EntityId = item.Id,
             Details = $"Updated product '{item.Name}' (SKU: {item.SKU})."
-        });
+        };
+        _dbContext.AuditLogs.Add(auditLog);
 
         await _dbContext.SaveChangesAsync(cancellationToken);
+
+        // Real-time broadcast
+        _ = _notificationService.NotifyItemUpdatedAsync(tenantId, item, userId, userName);
+        if (quantityTx != null)
+        {
+            _ = _notificationService.NotifyTransactionAsync(tenantId, quantityTx);
+        }
+        _ = _notificationService.NotifyAuditLogAsync(tenantId, auditLog);
+
         return item;
     }
 
@@ -175,8 +205,12 @@ public class InventoryService : IInventoryService
         if (item == null)
             return false;
 
+        var tenantId = _tenantContext.CurrentTenantId!;
+        var userId = _tenantContext.CurrentUserId ?? "system";
+        var userName = _tenantContext.CurrentUserName ?? "Admin";
+        var itemName = item.Name;
+
         // 1. Find all TenantFiles associated with this inventory item within the current tenant scope.
-        // EF Core Global Query Filter on TenantFiles guarantees we only find files belonging strictly to the active tenant.
         var associatedFiles = await _dbContext.TenantFiles
             .Where(f => f.AssociatedItemId == id)
             .ToListAsync(cancellationToken);
@@ -186,7 +220,6 @@ public class InventoryService : IInventoryService
         {
             try
             {
-                // Delete file from S3 / Local storage and remove database record
                 var fileDeleted = await _fileStorageService.DeleteFileAsync(file.Id, cancellationToken);
                 if (fileDeleted)
                 {
@@ -203,20 +236,26 @@ public class InventoryService : IInventoryService
         _dbContext.InventoryItems.Remove(item);
 
         // 3. Record comprehensive audit log
-        _dbContext.AuditLogs.Add(new AuditLog
+        var auditLog = new AuditLog
         {
             Id = Guid.NewGuid().ToString(),
-            TenantId = _tenantContext.CurrentTenantId!,
-            UserId = _tenantContext.CurrentUserId ?? "system",
-            UserName = _tenantContext.CurrentUserName ?? "Admin",
+            TenantId = tenantId,
+            UserId = userId,
+            UserName = userName,
             Action = "PRODUCT_DELETED",
             EntityType = "InventoryItem",
             EntityId = item.Id,
-            Details = $"Deleted product '{item.Name}' ({item.SKU}) and {deletedFilesCount} associated storage file(s) from active tenant inventory."
-        });
+            Details = $"Deleted product '{itemName}' ({item.SKU}) and {deletedFilesCount} associated storage file(s) from active tenant inventory."
+        };
+        _dbContext.AuditLogs.Add(auditLog);
 
         await _dbContext.SaveChangesAsync(cancellationToken);
-        _logger.LogInformation("Product '{ItemId}' deleted successfully with {FileCount} associated file(s) for tenant '{TenantId}'.", id, deletedFilesCount, _tenantContext.CurrentTenantId);
+        _logger.LogInformation("Product '{ItemId}' deleted successfully with {FileCount} associated file(s) for tenant '{TenantId}'.", id, deletedFilesCount, tenantId);
+
+        // Real-time broadcast
+        _ = _notificationService.NotifyItemDeletedAsync(tenantId, id, itemName, userId, userName);
+        _ = _notificationService.NotifyAuditLogAsync(tenantId, auditLog);
+
         return true;
     }
 
@@ -225,6 +264,10 @@ public class InventoryService : IInventoryService
         var item = await _dbContext.InventoryItems.FirstOrDefaultAsync(i => i.Id == id, cancellationToken);
         if (item == null)
             return null;
+
+        var tenantId = _tenantContext.CurrentTenantId!;
+        var userId = _tenantContext.CurrentUserId ?? "system";
+        var userName = _tenantContext.CurrentUserName ?? "Admin";
 
         var type = dto.Type.ToUpperInvariant();
         int previousQty = item.Quantity;
@@ -244,31 +287,38 @@ public class InventoryService : IInventoryService
 
         item.UpdatedAt = DateTime.UtcNow;
 
-        _dbContext.InventoryTransactions.Add(new InventoryTransaction
+        var transaction = new InventoryTransaction
         {
             Id = Guid.NewGuid().ToString(),
-            TenantId = _tenantContext.CurrentTenantId!,
+            TenantId = tenantId,
             InventoryItemId = item.Id,
             ProductName = item.Name,
             Type = type,
             Quantity = type == "ADJUSTMENT" ? (item.Quantity - previousQty) : Math.Abs(dto.QuantityChange),
             Note = dto.Note ?? "Stock level adjustment",
             CreatedAt = DateTime.UtcNow
-        });
+        };
+        _dbContext.InventoryTransactions.Add(transaction);
 
-        _dbContext.AuditLogs.Add(new AuditLog
+        var auditLog = new AuditLog
         {
             Id = Guid.NewGuid().ToString(),
-            TenantId = _tenantContext.CurrentTenantId!,
-            UserId = _tenantContext.CurrentUserId ?? "system",
-            UserName = _tenantContext.CurrentUserName ?? "Admin",
+            TenantId = tenantId,
+            UserId = userId,
+            UserName = userName,
             Action = "STOCK_UPDATED",
             EntityType = "InventoryItem",
             EntityId = item.Id,
             Details = $"Stock adjusted for '{item.Name}': {previousQty} → {item.Quantity} ({type}). Reason: {dto.Note}"
-        });
+        };
+        _dbContext.AuditLogs.Add(auditLog);
 
         await _dbContext.SaveChangesAsync(cancellationToken);
+
+        // Real-time broadcast
+        _ = _notificationService.NotifyStockAdjustedAsync(tenantId, item, transaction, userId, userName);
+        _ = _notificationService.NotifyAuditLogAsync(tenantId, auditLog);
+
         return item;
     }
 

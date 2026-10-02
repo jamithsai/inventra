@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "b676815b-1918-4e7b-ab37-f8818df4d492",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "C:\\Users\\jamit\\.gemini\\antigravity\\scratch\\multi-tenant-inventory\\.archify\\architecture-inventra-overview-20261001-104500\\candidate.json",
+  "output": "C:\\Users\\jamit\\.gemini\\antigravity\\scratch\\multi-tenant-inventory\\.archify\\architecture-inventra-overview-20261001-104500\\inventra-overview.html",
+  "specification": {
+    "sha256": "fd86d50dc4341584495995b573ff810492b654f0665f50c77062a0d79e291831",
+    "bytes": 8280
+  },
+  "artifact": {
+    "sha256": "d2eba9149e087b19f10df9f4b864a43395bd19d14b5f33e2363792dd38a85ed8",
+    "bytes": 770827
+  }
+}
