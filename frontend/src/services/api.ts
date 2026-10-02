@@ -205,6 +205,10 @@ export const inventoryApi = {
     const res = await apiClient.get<InventoryItem>(`/inventory/${id}`);
     return res.data;
   },
+  getByBarcode: async (barcode: string): Promise<InventoryItem> => {
+    const res = await apiClient.get<InventoryItem>(`/inventory/barcode/${encodeURIComponent(barcode.trim())}`);
+    return res.data;
+  },
   create: async (data: CreateInventoryItemDto): Promise<InventoryItem> => {
     const res = await apiClient.post<InventoryItem>('/inventory', data);
     return res.data;

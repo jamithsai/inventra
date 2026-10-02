@@ -8,6 +8,7 @@ interface ProductModalProps {
   onSave: (data: CreateInventoryItemDto) => Promise<void>;
   editingItem: InventoryItem | null;
   currentTenant: Tenant | null;
+  initialBarcode?: string;
 }
 
 export const ProductModal: React.FC<ProductModalProps> = ({
@@ -16,6 +17,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   onSave,
   editingItem,
   currentTenant,
+  initialBarcode = '',
 }) => {
   const [name, setName] = useState('');
   const [sku, setSku] = useState('');
@@ -23,9 +25,15 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   const [quantity, setQuantity] = useState(10);
   const [price, setPrice] = useState(99.99);
   const [lowStockThreshold, setLowStockThreshold] = useState(5);
+  const [barcode, setBarcode] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const generateRandomBarcode = () => {
+    const random10 = Math.floor(1000000000 + Math.random() * 9000000000);
+    setBarcode(`890${random10}`);
+  };
 
   useEffect(() => {
     if (editingItem) {
@@ -35,6 +43,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
       setQuantity(editingItem.quantity);
       setPrice(editingItem.price);
       setLowStockThreshold(editingItem.lowStockThreshold);
+      setBarcode(editingItem.barcode || '');
       setImageUrl(editingItem.imageUrl || '');
     } else {
       const prefix = currentTenant?.id.split('-')[0].toUpperCase() || 'SKU';
@@ -44,10 +53,11 @@ export const ProductModal: React.FC<ProductModalProps> = ({
       setQuantity(25);
       setPrice(149.99);
       setLowStockThreshold(5);
+      setBarcode(initialBarcode || '');
       setImageUrl('');
     }
     setError(null);
-  }, [editingItem, isOpen, currentTenant]);
+  }, [editingItem, isOpen, currentTenant, initialBarcode]);
 
   if (!isOpen) return null;
 
@@ -63,6 +73,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
         quantity: Number(quantity),
         price: Number(price),
         lowStockThreshold: Number(lowStockThreshold),
+        barcode: barcode.trim() || undefined,
         imageUrl: imageUrl || undefined,
       });
       onClose();
@@ -144,6 +155,28 @@ export const ProductModal: React.FC<ProductModalProps> = ({
                 className="w-full px-3 py-1.5 rounded-[7px] bg-[#FBFAF7] border border-[#E5E1D8] text-xs text-[#172033] focus:outline-none focus:border-[#3157D5] focus:bg-white focus:ring-1 focus:ring-[#3157D5] transition"
               />
             </div>
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-xs font-semibold text-[#172033]">
+                Barcode (EAN-13 / UPC / Code-128)
+              </label>
+              <button
+                type="button"
+                onClick={generateRandomBarcode}
+                className="text-[11px] font-semibold text-[#3157D5] hover:underline"
+              >
+                + Generate Random Barcode
+              </button>
+            </div>
+            <input
+              type="text"
+              placeholder="e.g. 0194253789012"
+              value={barcode}
+              onChange={(e) => setBarcode(e.target.value)}
+              className="w-full px-3 py-1.5 rounded-[7px] bg-[#FBFAF7] border border-[#E5E1D8] text-xs font-mono text-[#172033] placeholder-[#98A2B3] focus:outline-none focus:border-[#3157D5] focus:bg-white focus:ring-1 focus:ring-[#3157D5] transition"
+            />
           </div>
 
           <div className="grid grid-cols-3 gap-3">

@@ -8,6 +8,7 @@ public class CreateInventoryItemDto
     public int Quantity { get; set; }
     public decimal Price { get; set; }
     public int LowStockThreshold { get; set; } = 5;
+    public string? Barcode { get; set; }
     public string? ImageUrl { get; set; }
 }
 
@@ -19,6 +20,7 @@ public class UpdateInventoryItemDto
     public int? Quantity { get; set; }
     public decimal? Price { get; set; }
     public int? LowStockThreshold { get; set; }
+    public string? Barcode { get; set; }
     public string? ImageUrl { get; set; }
 }
 

@@ -194,9 +194,40 @@ Inventra features an enterprise visual analytics suite with zero-latency tenant-
 
 ---
 
+## ⌨️ Global Command Palette (`Ctrl + K` / `Cmd + K`)
+
+Inventra features a keyboard-first global command center for enterprise navigation and rapid operations:
+
+- **Universal Keyboard Trigger:** Press `Ctrl + K` (or `Cmd + K` on macOS), or click the search trigger in the header.
+- **Role-Aware Command Dispatch:** Commands are automatically filtered based on user permissions (e.g. Platform Admin tenant provisioning actions are hidden from standard tenant members).
+- **Categorized Workflows:**
+  - `INVENTORY`: Scan product barcodes, create new SKUs, filter low stock / out of stock watchlists.
+  - `NAVIGATION`: Jump to Executive Dashboard, Inventory Table, S3 Storage, Audit Trail, Isolation Bench, and Architecture Specs.
+  - `WORKSPACE`: Instant switching between all user-authorized organizations without reloading the page.
+  - `SYSTEM & ACCOUNT`: Instant workspace cache sync, session termination, and profile inspection.
+- **Full Keyboard Navigation:** Arrow up/down selection, automatic scrolling, enter to trigger, and escape to close.
+
+---
+
+## 📷 Barcode Scanner & Quick Warehouse Lookup
+
+Fast inventory auditing and physical warehouse reconciliation powered by browser camera scanning and tenant-isolated barcode indexing:
+
+- **Dual-Mode Scanner:**
+  - **Live Camera Scanner:** Real-time barcode decoding using browser-native `BarcodeDetector` API for zero latency and low CPU overhead.
+  - **Manual Entry & Preset Bench:** Instant manual barcode query input with 1-click test presets across tenant catalogs.
+- **Tenant-Scoped Barcode Indexing:** Barcodes are indexed as `(TenantId, Barcode)` on the database level. Barcodes belonging to other organizations return a strict `404 Not Found` with zero-trust defense warnings.
+- **Inline Quick Warehouse Actions:**
+  - Instant product specifications, stock levels, and valuation breakdown.
+  - One-click inbound restock (`+Qty`) and outbound dispatch (`-Qty`) with immediate database mutation and audit log generation.
+  - One-click navigation to full product editor or filtered inventory view.
+  - Fallback workflow to create a new product prefilled with the scanned barcode when unindexed.
+
+---
+
 ## 🧪 Running Automated Security Verification Tests
 
-Execute the comprehensive xUnit test suite (32 automated integration tests covering authentication, tenant onboarding, tenant isolation, executive analytics isolation, S3 key isolation, and cascade cleanup):
+Execute the comprehensive xUnit test suite (39 automated integration tests covering authentication, tenant onboarding, tenant isolation, executive analytics isolation, barcode lookup security, S3 key isolation, and cascade cleanup):
 
 ```powershell
 dotnet test backend/MultiTenantInventory.Tests/MultiTenantInventory.Tests.csproj
@@ -211,4 +242,5 @@ dotnet test backend/MultiTenantInventory.Tests/MultiTenantInventory.Tests.csproj
 3. **Step 3 - Atomic Provisioning:** Fill out organization details (e.g. *Orbit Healthcare Logistics*, slug: `orbit-healthcare`, admin: *Rahul Sharma*, email: `rahul@orbithealthcare.com`) and click **Atomically Provision Tenant**.
 4. **Step 4 - Invitation & Account Setup:** Copy the generated invitation link (`/invite/{token}`) and open it. Observe real-time password criteria validation, set master password `OrbitAdmin@2026!`, and activate the account.
 5. **Step 5 - Isolated Tenant Session:** Sign in as `rahul@orbithealthcare.com`. Observe that Rahul has access strictly isolated to Orbit Healthcare, with an empty catalog and zero access to Acme or Nova data.
-6. **Step 6 - Live Security Attack Bench:** Navigate to **"Isolation Bench"** in the sidebar and click **"Run All 5 Test Scenarios"** to verify 100% defense against IDOR, header spoofing, cross-tenant mutation, deletion, and S3 path traversal.
+6. **Step 6 - Command Palette & Barcode Scanner:** Press `Ctrl + K` to open the Command Palette. Type `scan` and press `Enter` to open the Barcode Scanner. Test instant warehouse barcode lookup and stock adjustment.
+7. **Step 7 - Live Security Attack Bench:** Navigate to **"Isolation Bench"** in the sidebar and click **"Run All 5 Test Scenarios"** to verify 100% defense against IDOR, header spoofing, cross-tenant mutation, deletion, and S3 path traversal.

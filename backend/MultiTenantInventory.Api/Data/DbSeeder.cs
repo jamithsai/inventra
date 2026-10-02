@@ -18,6 +18,16 @@ public static class DbSeeder
             // Ensure Database Created
             await context.Database.EnsureCreatedAsync();
 
+            // Ensure Barcode column exists for existing SQLite database files
+            try
+            {
+                await context.Database.ExecuteSqlRawAsync("ALTER TABLE InventoryItems ADD COLUMN Barcode TEXT;");
+            }
+            catch
+            {
+                // Column already exists
+            }
+
             if (await context.Tenants.AnyAsync())
             {
                 var updated = false;
@@ -106,6 +116,7 @@ public static class DbSeeder
                             TenantId = "forge",
                             Name = "Industrial 5-Axis CNC Milling Center",
                             SKU = "FRG-CNC-5X",
+                            Barcode = "8901234000011",
                             Category = "Heavy Machinery",
                             Quantity = 6,
                             Price = 78500.00m,
@@ -119,6 +130,7 @@ public static class DbSeeder
                             TenantId = "forge",
                             Name = "Aerospace Grade Titanium Bar Stock (Ti-6Al-4V)",
                             SKU = "FRG-TIT-001",
+                            Barcode = "8901234000022",
                             Category = "Raw Materials",
                             Quantity = 120,
                             Price = 340.00m,
@@ -132,6 +144,7 @@ public static class DbSeeder
                             TenantId = "forge",
                             Name = "Precision Hydraulic Forge Press 250T",
                             SKU = "FRG-PRS-250",
+                            Barcode = "8901234000033",
                             Category = "Presses & Forging",
                             Quantity = 3,
                             Price = 45000.00m,
@@ -142,6 +155,31 @@ public static class DbSeeder
                     });
                     await context.SaveChangesAsync();
                 }
+
+                // 6. Ensure all existing inventory items across all tenants have deterministic barcodes populated
+                await context.Database.ExecuteSqlRawAsync(@"
+                    UPDATE InventoryItems SET Barcode = '0194253789012' WHERE Id = 'item_acme_1' AND (Barcode IS NULL OR Barcode = '');
+                    UPDATE InventoryItems SET Barcode = '0884116412345' WHERE Id = 'item_acme_2' AND (Barcode IS NULL OR Barcode = '');
+                    UPDATE InventoryItems SET Barcode = '0887276712348' WHERE Id = 'item_acme_3' AND (Barcode IS NULL OR Barcode = '');
+                    UPDATE InventoryItems SET Barcode = '0027242923456' WHERE Id = 'item_acme_4' AND (Barcode IS NULL OR Barcode = '');
+                    UPDATE InventoryItems SET Barcode = '0194253812340' WHERE Id = 'item_acme_5' AND (Barcode IS NULL OR Barcode = '');
+                    UPDATE InventoryItems SET Barcode = '0097855172349' WHERE Id = 'item_acme_6' AND (Barcode IS NULL OR Barcode = '');
+                    UPDATE InventoryItems SET Barcode = '5901234123457' WHERE Id = 'item_nova_1' AND (Barcode IS NULL OR Barcode = '');
+                    UPDATE InventoryItems SET Barcode = '7640152112341' WHERE Id = 'item_nova_2' AND (Barcode IS NULL OR Barcode = '');
+                    UPDATE InventoryItems SET Barcode = '7501031311309' WHERE Id = 'item_nova_3' AND (Barcode IS NULL OR Barcode = '');
+                    UPDATE InventoryItems SET Barcode = '8901234567890' WHERE Id = 'item_nova_4' AND (Barcode IS NULL OR Barcode = '');
+                    UPDATE InventoryItems SET Barcode = '4006381333931' WHERE Id = 'item_nova_5' AND (Barcode IS NULL OR Barcode = '');
+                    UPDATE InventoryItems SET Barcode = '8718696123456' WHERE Id = 'item_nova_6' AND (Barcode IS NULL OR Barcode = '');
+                    UPDATE InventoryItems SET Barcode = '9780201379624' WHERE Id = 'item_zenith_1' AND (Barcode IS NULL OR Barcode = '');
+                    UPDATE InventoryItems SET Barcode = '9780131103627' WHERE Id = 'item_zenith_2' AND (Barcode IS NULL OR Barcode = '');
+                    UPDATE InventoryItems SET Barcode = '9780262033848' WHERE Id = 'item_zenith_3' AND (Barcode IS NULL OR Barcode = '');
+                    UPDATE InventoryItems SET Barcode = '9780321765723' WHERE Id = 'item_zenith_4' AND (Barcode IS NULL OR Barcode = '');
+                    UPDATE InventoryItems SET Barcode = '9780596007126' WHERE Id = 'item_zenith_5' AND (Barcode IS NULL OR Barcode = '');
+                    UPDATE InventoryItems SET Barcode = '9781491950296' WHERE Id = 'item_zenith_6' AND (Barcode IS NULL OR Barcode = '');
+                    UPDATE InventoryItems SET Barcode = '8901234000011' WHERE Id = 'item_forge_1' AND (Barcode IS NULL OR Barcode = '');
+                    UPDATE InventoryItems SET Barcode = '8901234000022' WHERE Id = 'item_forge_2' AND (Barcode IS NULL OR Barcode = '');
+                    UPDATE InventoryItems SET Barcode = '8901234000033' WHERE Id = 'item_forge_3' AND (Barcode IS NULL OR Barcode = '');
+                ");
 
                 return; // Already seeded
             }
@@ -279,6 +317,7 @@ public static class DbSeeder
                 TenantId = "acme-retail",
                 Name = "iPhone 15 Pro Max 256GB Titanium",
                 SKU = "ACM-IPH-15P",
+                Barcode = "0194253789012",
                 Category = "Smartphones",
                 Quantity = 42,
                 Price = 1199.00m,
@@ -293,6 +332,7 @@ public static class DbSeeder
                 TenantId = "acme-retail",
                 Name = "Dell XPS 15 OLED Laptop i9 32GB",
                 SKU = "ACM-XPS-15",
+                Barcode = "0884116412345",
                 Category = "Laptops",
                 Quantity = 15,
                 Price = 1899.00m,
@@ -307,6 +347,7 @@ public static class DbSeeder
                 TenantId = "acme-retail",
                 Name = "Samsung Odyssey Neo G9 49\" Curved Monitor",
                 SKU = "ACM-SAM-G9",
+                Barcode = "0887276712348",
                 Category = "Displays",
                 Quantity = 8,
                 Price = 1499.00m,
@@ -321,6 +362,7 @@ public static class DbSeeder
                 TenantId = "acme-retail",
                 Name = "Sony WH-1000XM5 Wireless ANC Headphones",
                 SKU = "ACM-SNY-XM5",
+                Barcode = "0027242923456",
                 Category = "Audio",
                 Quantity = 34,
                 Price = 399.00m,
@@ -335,6 +377,7 @@ public static class DbSeeder
                 TenantId = "acme-retail",
                 Name = "Apple Watch Ultra 2 GPS+Cellular",
                 SKU = "ACM-AW-ULT2",
+                Barcode = "0194253812340",
                 Category = "Wearables",
                 Quantity = 4,
                 Price = 799.00m,
@@ -349,6 +392,7 @@ public static class DbSeeder
                 TenantId = "acme-retail",
                 Name = "Logitech MX Master 3S Wireless Mouse",
                 SKU = "ACM-LOG-MX3",
+                Barcode = "0097855172349",
                 Category = "Accessories",
                 Quantity = 0,
                 Price = 99.00m,
@@ -369,6 +413,7 @@ public static class DbSeeder
                 TenantId = "nova-electronics",
                 Name = "ESP32-WROOM-32D Dual-Core MCU Dev Board",
                 SKU = "NOV-ESP-32D",
+                Barcode = "5901234123457",
                 Category = "Microcontrollers",
                 Quantity = 450,
                 Price = 6.50m,
@@ -383,6 +428,7 @@ public static class DbSeeder
                 TenantId = "nova-electronics",
                 Name = "Arduino Uno R4 WiFi Microcontroller",
                 SKU = "NOV-ARD-R4W",
+                Barcode = "7640152112341",
                 Category = "Microcontrollers",
                 Quantity = 120,
                 Price = 27.50m,
@@ -397,6 +443,7 @@ public static class DbSeeder
                 TenantId = "nova-electronics",
                 Name = "Raspberry Pi 5 8GB ARM SBC",
                 SKU = "NOV-RPI-58G",
+                Barcode = "7501031311309",
                 Category = "Single-Board Computers",
                 Quantity = 65,
                 Price = 80.00m,
@@ -411,6 +458,7 @@ public static class DbSeeder
                 TenantId = "nova-electronics",
                 Name = "STM32 Nucleo-64 Cortex-M4 Board",
                 SKU = "NOV-STM-NUC",
+                Barcode = "8901234567890",
                 Category = "ARM Boards",
                 Quantity = 85,
                 Price = 14.00m,
@@ -425,6 +473,7 @@ public static class DbSeeder
                 TenantId = "nova-electronics",
                 Name = "Raspberry Pi Pico W with Headers",
                 SKU = "NOV-RPI-PICW",
+                Barcode = "4006381333931",
                 Category = "Microcontrollers",
                 Quantity = 12,
                 Price = 7.00m,
@@ -439,6 +488,7 @@ public static class DbSeeder
                 TenantId = "nova-electronics",
                 Name = "LoRa SX1276 915MHz Wireless Module",
                 SKU = "NOV-LRA-1276",
+                Barcode = "8718696123456",
                 Category = "Wireless & IoT",
                 Quantity = 0,
                 Price = 12.00m,
@@ -459,6 +509,7 @@ public static class DbSeeder
                 TenantId = "zenith-supplies",
                 Name = "Herman Miller Aeron Ergonomic Chair Size B",
                 SKU = "ZEN-HMA-CHR",
+                Barcode = "9780201379624",
                 Category = "Ergonomic Furniture",
                 Quantity = 18,
                 Price = 1495.00m,
@@ -473,6 +524,7 @@ public static class DbSeeder
                 TenantId = "zenith-supplies",
                 Name = "HP LaserJet Enterprise M507dn Printer",
                 SKU = "ZEN-HP-LJ507",
+                Barcode = "9780131103627",
                 Category = "Printers & Imaging",
                 Quantity = 6,
                 Price = 699.00m,
@@ -487,6 +539,7 @@ public static class DbSeeder
                 TenantId = "zenith-supplies",
                 Name = "Keychron Q1 Pro Wireless Mechanical Keyboard",
                 SKU = "ZEN-KEY-Q1P",
+                Barcode = "9780262033848",
                 Category = "Peripherals",
                 Quantity = 28,
                 Price = 199.00m,
@@ -501,6 +554,7 @@ public static class DbSeeder
                 TenantId = "zenith-supplies",
                 Name = "Electric Dual-Motor Standing Desk 60x30",
                 SKU = "ZEN-DSK-MOT60",
+                Barcode = "9780321765723",
                 Category = "Ergonomic Furniture",
                 Quantity = 14,
                 Price = 580.00m,
@@ -515,6 +569,7 @@ public static class DbSeeder
                 TenantId = "zenith-supplies",
                 Name = "Fellowes Powershred 24-Sheet Cross-Cut Shredder",
                 SKU = "ZEN-FEL-SHR24",
+                Barcode = "9780596007126",
                 Category = "Office Equipment",
                 Quantity = 2,
                 Price = 320.00m,
@@ -529,6 +584,7 @@ public static class DbSeeder
                 TenantId = "zenith-supplies",
                 Name = "Logitech Rally 4K Ultra-HD Conference Cam",
                 SKU = "ZEN-LOG-RAL4K",
+                Barcode = "9781491950296",
                 Category = "Conference Tech",
                 Quantity = 0,
                 Price = 1299.00m,

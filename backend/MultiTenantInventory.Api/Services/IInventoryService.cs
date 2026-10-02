@@ -7,6 +7,7 @@ public interface IInventoryService
 {
     Task<List<InventoryItem>> GetItemsAsync(string? search = null, string? category = null, string? status = null, CancellationToken cancellationToken = default);
     Task<InventoryItem?> GetItemByIdAsync(string id, CancellationToken cancellationToken = default);
+    Task<InventoryItem?> GetItemByBarcodeAsync(string barcode, CancellationToken cancellationToken = default);
     Task<InventoryItem> CreateItemAsync(CreateInventoryItemDto dto, CancellationToken cancellationToken = default);
     Task<InventoryItem?> UpdateItemAsync(string id, UpdateInventoryItemDto dto, CancellationToken cancellationToken = default);
     Task<bool> DeleteItemAsync(string id, CancellationToken cancellationToken = default);

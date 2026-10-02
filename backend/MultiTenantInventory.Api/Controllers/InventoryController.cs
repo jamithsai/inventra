@@ -46,6 +46,29 @@ public class InventoryController : ControllerBase
         return Ok(item);
     }
 
+    [HttpGet("barcode/{barcode}")]
+    public async Task<IActionResult> GetByBarcode(string barcode)
+    {
+        if (string.IsNullOrWhiteSpace(barcode))
+        {
+            return BadRequest(new { error = "InvalidBarcode", message = "Barcode value is required." });
+        }
+
+        var item = await _inventoryService.GetItemByBarcodeAsync(barcode);
+        if (item == null)
+        {
+            // Note: If the barcode belongs to another tenant, the EF Core Global Query Filter automatically excludes it,
+            // guaranteeing zero cross-tenant resolution.
+            return NotFound(new 
+            { 
+                error = "BarcodeNotFound", 
+                message = $"No product found with barcode '{barcode}' in active workspace '{_tenantContext.CurrentTenantId}'." 
+            });
+        }
+
+        return Ok(item);
+    }
+
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateInventoryItemDto dto)
     {

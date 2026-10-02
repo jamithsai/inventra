@@ -43,7 +43,8 @@ public class InventoryService : IInventoryService
             var s = search.Trim().ToLower();
             query = query.Where(i => i.Name.ToLower().Contains(s) || 
                                      i.SKU.ToLower().Contains(s) || 
-                                     i.Category.ToLower().Contains(s));
+                                     i.Category.ToLower().Contains(s) ||
+                                     (i.Barcode != null && i.Barcode.ToLower().Contains(s)));
         }
 
         if (!string.IsNullOrWhiteSpace(category) && !category.Equals("ALL", StringComparison.OrdinalIgnoreCase))
@@ -69,12 +70,33 @@ public class InventoryService : IInventoryService
             .FirstOrDefaultAsync(i => i.Id == id, cancellationToken);
     }
 
+    public async Task<InventoryItem?> GetItemByBarcodeAsync(string barcode, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(barcode))
+            return null;
+
+        var b = barcode.Trim();
+        // EF Core Global Query Filter guarantees that foreign tenant items return null
+        return await _dbContext.InventoryItems
+            .FirstOrDefaultAsync(i => i.Barcode == b, cancellationToken);
+    }
+
     public async Task<InventoryItem> CreateItemAsync(CreateInventoryItemDto dto, CancellationToken cancellationToken = default)
     {
         var tenantId = _tenantContext.CurrentTenantId;
         if (string.IsNullOrEmpty(tenantId))
         {
             throw new InvalidOperationException("Tenant context is required to create an inventory item.");
+        }
+
+        string? normalizedBarcode = string.IsNullOrWhiteSpace(dto.Barcode) ? null : dto.Barcode.Trim();
+        if (normalizedBarcode != null)
+        {
+            var exists = await _dbContext.InventoryItems.AnyAsync(i => i.Barcode == normalizedBarcode, cancellationToken);
+            if (exists)
+            {
+                throw new InvalidOperationException($"An item with barcode '{normalizedBarcode}' already exists in this workspace.");
+            }
         }
 
         var item = new InventoryItem
@@ -87,6 +109,7 @@ public class InventoryService : IInventoryService
             Quantity = dto.Quantity,
             Price = dto.Price,
             LowStockThreshold = dto.LowStockThreshold,
+            Barcode = normalizedBarcode,
             ImageUrl = dto.ImageUrl,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
@@ -150,6 +173,20 @@ public class InventoryService : IInventoryService
         if (dto.Price.HasValue) item.Price = dto.Price.Value;
         if (dto.LowStockThreshold.HasValue) item.LowStockThreshold = dto.LowStockThreshold.Value;
         if (dto.ImageUrl != null) item.ImageUrl = dto.ImageUrl;
+
+        if (dto.Barcode != null)
+        {
+            var normalizedBarcode = string.IsNullOrWhiteSpace(dto.Barcode) ? null : dto.Barcode.Trim();
+            if (normalizedBarcode != null && normalizedBarcode != item.Barcode)
+            {
+                var exists = await _dbContext.InventoryItems.AnyAsync(i => i.Id != id && i.Barcode == normalizedBarcode, cancellationToken);
+                if (exists)
+                {
+                    throw new InvalidOperationException($"An item with barcode '{normalizedBarcode}' already exists in this workspace.");
+                }
+            }
+            item.Barcode = normalizedBarcode;
+        }
 
         InventoryTransaction? quantityTx = null;
         if (dto.Quantity.HasValue && dto.Quantity.Value != item.Quantity)

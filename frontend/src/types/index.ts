@@ -42,6 +42,7 @@ export interface InventoryItem {
   quantity: number;
   price: number;
   lowStockThreshold: number;
+  barcode?: string;
   imageUrl?: string;
   createdAt: string;
   updatedAt: string;
@@ -55,6 +56,7 @@ export interface CreateInventoryItemDto {
   quantity: number;
   price: number;
   lowStockThreshold: number;
+  barcode?: string;
   imageUrl?: string;
 }
 
@@ -65,6 +67,7 @@ export interface UpdateInventoryItemDto {
   quantity?: number;
   price?: number;
   lowStockThreshold?: number;
+  barcode?: string;
   imageUrl?: string;
 }
 

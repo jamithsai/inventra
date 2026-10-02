@@ -13,6 +13,8 @@ import { StockAdjustModal } from './components/StockAdjustModal';
 import { LoginPage } from './components/LoginPage';
 import { PlatformTenantsView } from './components/PlatformTenantsView';
 import { AcceptInvitationPage } from './components/AcceptInvitationPage';
+import { CommandPaletteModal } from './components/CommandPaletteModal';
+import { BarcodeScannerModal } from './components/BarcodeScannerModal';
 import type { 
   Tenant, 
   User, 
@@ -96,11 +98,26 @@ export const App: React.FC = () => {
   });
   const [prefilledLoginEmail, setPrefilledLoginEmail] = useState<string>('');
 
-  // Modals
+  // Modals & Tools
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
+  const [initialBarcodeForNewProduct, setInitialBarcodeForNewProduct] = useState<string>('');
   const [isStockModalOpen, setIsStockModalOpen] = useState(false);
   const [stockItem, setStockItem] = useState<InventoryItem | null>(null);
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  const [isBarcodeScannerOpen, setIsBarcodeScannerOpen] = useState(false);
+
+  // Global Keyboard Shortcut: Ctrl+K / Cmd+K for Command Palette
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setIsCommandPaletteOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, []);
 
   const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
     setToast({ message, type });
@@ -370,6 +387,13 @@ export const App: React.FC = () => {
   // 7. Product Management CRUD Handlers
   const handleOpenAddModal = () => {
     setEditingItem(null);
+    setInitialBarcodeForNewProduct('');
+    setIsProductModalOpen(true);
+  };
+
+  const handleOpenAddModalWithBarcode = (barcode: string) => {
+    setEditingItem(null);
+    setInitialBarcodeForNewProduct(barcode);
     setIsProductModalOpen(true);
   };
 
@@ -497,6 +521,8 @@ export const App: React.FC = () => {
         onLogout={handleLogout}
         loading={loading}
         onRefresh={() => fetchTenantData()}
+        onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
+        onOpenBarcodeScanner={() => setIsBarcodeScannerOpen(true)}
         isRealtimeConnected={isRealtimeConnected}
         activeUsersCount={activeUsersCount}
         activeUsers={activeUsers}
@@ -538,6 +564,7 @@ export const App: React.FC = () => {
               onOpenEditModal={handleOpenEditModal}
               onOpenStockModal={handleOpenStockModal}
               onDeleteItem={handleDeleteItem}
+              onOpenBarcodeScanner={() => setIsBarcodeScannerOpen(true)}
               initialCategory={inventoryCategoryFilter}
               initialStatus={inventoryStatusFilter}
             />
@@ -579,13 +606,14 @@ export const App: React.FC = () => {
         </main>
       </div>
 
-      {/* Modals */}
+      {/* Modals & Tools */}
       <ProductModal
         isOpen={isProductModalOpen}
         onClose={() => setIsProductModalOpen(false)}
         onSave={handleSaveProduct}
         editingItem={editingItem}
         currentTenant={currentTenant}
+        initialBarcode={initialBarcodeForNewProduct}
       />
 
       <StockAdjustModal
@@ -594,6 +622,39 @@ export const App: React.FC = () => {
         item={stockItem}
         onAdjust={handleAdjustStock}
         currentTenant={currentTenant}
+      />
+
+      <CommandPaletteModal
+        isOpen={isCommandPaletteOpen}
+        onClose={() => setIsCommandPaletteOpen(false)}
+        currentUser={currentUser}
+        currentTenant={currentTenant}
+        authorizedTenants={authorizedTenants.length > 0 ? authorizedTenants : allTenants}
+        onNavigateTab={setCurrentTab}
+        onNavigateWithFilter={handleNavigateToInventoryWithFilter}
+        onOpenAddProduct={handleOpenAddModal}
+        onOpenBarcodeScanner={() => setIsBarcodeScannerOpen(true)}
+        onSelectTenant={handleSelectTenant}
+        onRefreshData={() => fetchTenantData()}
+        onLogout={handleLogout}
+      />
+
+      <BarcodeScannerModal
+        isOpen={isBarcodeScannerOpen}
+        onClose={() => setIsBarcodeScannerOpen(false)}
+        currentTenant={currentTenant}
+        onViewProductInInventory={(item) => {
+          handleNavigateToInventoryWithFilter({ category: item.category });
+        }}
+        onEditProduct={(item) => {
+          handleOpenEditModal(item);
+        }}
+        onAddNewProductWithBarcode={(barcode) => {
+          handleOpenAddModalWithBarcode(barcode);
+        }}
+        onStockUpdated={() => {
+          fetchTenantData();
+        }}
       />
 
       {/* Floating Toast Notification */}

@@ -10,7 +10,9 @@ import {
   Users,
   Briefcase,
   Wifi,
-  WifiOff
+  WifiOff,
+  Search,
+  ScanBarcode
 } from 'lucide-react';
 import type { Tenant, User, UserPresence } from '../types';
 
@@ -22,6 +24,8 @@ interface NavbarProps {
   onLogout: () => void;
   loading: boolean;
   onRefresh: () => void;
+  onOpenCommandPalette?: () => void;
+  onOpenBarcodeScanner?: () => void;
   isRealtimeConnected?: boolean;
   activeUsersCount?: number;
   activeUsers?: UserPresence[];
@@ -35,6 +39,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   onLogout,
   loading,
   onRefresh,
+  onOpenCommandPalette,
+  onOpenBarcodeScanner,
   isRealtimeConnected = false,
   activeUsersCount = 1,
   activeUsers = [],
@@ -47,23 +53,51 @@ export const Navbar: React.FC<NavbarProps> = ({
     <header className="sticky top-0 z-40 bg-white border-b border-[#E5E1D8] shadow-[0_1px_2px_rgba(23,32,51,0.02)]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between h-14">
-          {/* Brand Logo & Name */}
-          <div className="flex items-center space-x-3">
-            <div className="w-7 h-7 rounded-[6px] bg-[#3157D5] flex items-center justify-center text-white shadow-xs">
-              <Layers className="w-4 h-4" />
+          {/* Brand Logo & Command Palette Quick Search Trigger */}
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-3">
+              <div className="w-7 h-7 rounded-[6px] bg-[#3157D5] flex items-center justify-center text-white shadow-xs">
+                <Layers className="w-4 h-4" />
+              </div>
+              <div className="flex items-center space-x-2">
+                <span className="text-sm font-semibold tracking-tight text-[#172033]">
+                  Inventra
+                </span>
+                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-[4px] bg-[#E9EEFF] text-[#3157D5] border border-[#C7D7FE] font-medium">
+                  Multi-Tenant
+                </span>
+              </div>
             </div>
-            <div className="flex items-center space-x-2">
-              <span className="text-sm font-semibold tracking-tight text-[#172033]">
-                Inventra
-              </span>
-              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-[4px] bg-[#E9EEFF] text-[#3157D5] border border-[#C7D7FE] font-medium">
-                Multi-Tenant
-              </span>
-            </div>
+
+            {/* Global Command Palette Trigger in Header */}
+            {onOpenCommandPalette && (
+              <button
+                onClick={onOpenCommandPalette}
+                className="hidden md:flex items-center space-x-2.5 px-3 py-1.5 rounded-[8px] border border-[#E5E1D8] bg-[#FBFAF7] hover:bg-[#F2EFE9] text-[#667085] hover:text-[#172033] text-xs transition cursor-pointer shadow-2xs group"
+                title="Open Global Command Palette (Ctrl + K / Cmd + K)"
+              >
+                <Search className="w-3.5 h-3.5 text-[#868C98] group-hover:text-[#3157D5] transition" />
+                <span className="font-medium text-[12px]">Search or jump to...</span>
+                <kbd className="inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono font-semibold text-[#667085] bg-white border border-[#D0D5DD] rounded shadow-2xs">
+                  Ctrl K
+                </kbd>
+              </button>
+            )}
           </div>
 
-          {/* Right Actions: Real-time Sync Status, Tenant Selector, Refresh, User Profile Menu */}
+          {/* Right Actions: Barcode Scanner, Real-time Sync Status, Tenant Selector, Refresh, User Profile Menu */}
           <div className="flex items-center space-x-2.5">
+            {/* Quick Barcode Scanner Trigger */}
+            {onOpenBarcodeScanner && (
+              <button
+                onClick={onOpenBarcodeScanner}
+                className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-[7px] border border-[#E5E1D8] bg-white hover:bg-[#FBFAF7] text-[#344054] text-xs font-semibold transition cursor-pointer shadow-2xs"
+                title="Scan Product Barcode"
+              >
+                <ScanBarcode className="w-3.5 h-3.5 text-[#3157D5]" />
+                <span className="hidden lg:inline text-[12px]">Scan Barcode</span>
+              </button>
+            )}
             {/* Real-time SignalR Live Presence Pill */}
             <div className="relative">
               <button

@@ -7,8 +7,9 @@ import {
   Trash2, 
   SlidersHorizontal, 
   Package, 
-  RefreshCw,
-  ArrowUpDown
+  RefreshCw, 
+  ArrowUpDown,
+  ScanBarcode
 } from 'lucide-react';
 import type { InventoryItem, Tenant } from '../types';
 
@@ -21,6 +22,7 @@ interface InventoryViewProps {
   onOpenEditModal: (item: InventoryItem) => void;
   onOpenStockModal: (item: InventoryItem) => void;
   onDeleteItem: (id: string, name: string) => void;
+  onOpenBarcodeScanner?: () => void;
   initialCategory?: string;
   initialStatus?: string;
 }
@@ -34,6 +36,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
   onOpenEditModal,
   onOpenStockModal,
   onDeleteItem,
+  onOpenBarcodeScanner,
   initialCategory = 'ALL',
   initialStatus = 'ALL',
 }) => {
@@ -61,7 +64,8 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
         const matchesSearch =
           item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
           item.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          item.category.toLowerCase().includes(searchTerm.toLowerCase());
+          item.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (item.barcode && item.barcode.toLowerCase().includes(searchTerm.toLowerCase()));
 
         const matchesCategory = categoryFilter === 'ALL' || item.category === categoryFilter;
 
@@ -119,17 +123,27 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
         </div>
 
         <div className="flex items-center space-x-2">
+          {onOpenBarcodeScanner && (
+            <button
+              onClick={onOpenBarcodeScanner}
+              className="px-3 py-1.5 rounded-[7px] bg-white hover:bg-[#FBFAF7] text-[#344054] border border-[#E5E1D8] font-medium text-xs transition shadow-xs flex items-center space-x-1.5 cursor-pointer"
+              title="Open Barcode Scanner (Ctrl + K -> Scan)"
+            >
+              <ScanBarcode className="w-3.5 h-3.5 text-[#3157D5]" />
+              <span className="hidden sm:inline">Scan Barcode</span>
+            </button>
+          )}
           <button
             onClick={onRefresh}
             disabled={loading}
-            className="p-2 rounded-[7px] bg-white hover:bg-[#FBFAF7] text-[#667085] border border-[#E5E1D8] transition shadow-xs"
+            className="p-2 rounded-[7px] bg-white hover:bg-[#FBFAF7] text-[#667085] border border-[#E5E1D8] transition shadow-xs cursor-pointer"
             title="Refresh Catalog"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-[#3157D5]' : ''}`} />
           </button>
           <button
             onClick={onOpenAddModal}
-            className="px-3.5 py-1.5 rounded-[7px] bg-[#3157D5] hover:bg-[#2648BE] text-white font-medium text-xs transition shadow-xs flex items-center space-x-1.5"
+            className="px-3.5 py-1.5 rounded-[7px] bg-[#3157D5] hover:bg-[#2648BE] text-white font-medium text-xs transition shadow-xs flex items-center space-x-1.5 cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Add Product</span>
@@ -144,7 +158,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
           <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[#98A2B3]" />
           <input
             type="text"
-            placeholder="Filter by product name, SKU, or category..."
+            placeholder="Filter by product name, SKU, category, or barcode..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-9 pr-3 py-1.5 rounded-[7px] bg-[#FBFAF7] border border-[#E5E1D8] text-xs text-[#172033] placeholder-[#98A2B3] focus:outline-none focus:border-[#3157D5] focus:bg-white transition"
@@ -242,9 +256,15 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                       </div>
                     </td>
 
-                    {/* SKU */}
+                    {/* SKU & Barcode */}
                     <td className="px-4 py-3 font-mono text-[#667085]">
-                      {item.sku}
+                      <div className="font-semibold text-[#172033]">{item.sku}</div>
+                      {item.barcode && (
+                        <div className="text-[10px] text-[#3157D5] flex items-center space-x-1 mt-0.5 font-mono">
+                          <ScanBarcode className="w-3 h-3 text-[#3157D5] shrink-0" />
+                          <span>{item.barcode}</span>
+                        </div>
+                      )}
                     </td>
 
                     {/* Category */}

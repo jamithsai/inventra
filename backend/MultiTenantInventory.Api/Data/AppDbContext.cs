@@ -92,8 +92,10 @@ public class AppDbContext : DbContext
             entity.Property(e => e.TenantId).IsRequired().HasMaxLength(100);
             entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
             entity.Property(e => e.SKU).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Barcode).HasMaxLength(100);
             entity.Property(e => e.Price).HasPrecision(18, 2);
             entity.HasIndex(e => new { e.TenantId, e.SKU }).IsUnique();
+            entity.HasIndex(e => new { e.TenantId, e.Barcode });
             entity.HasIndex(e => e.TenantId);
 
             // GLOBAL QUERY FILTER: Automatically filters all queries to the active tenant
