@@ -192,16 +192,20 @@ export const ProductModal: React.FC<ProductModalProps> = ({
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-[#172033] mb-1">Unit Price ($)</label>
-              <input
-                type="number"
-                min="0.01"
-                step="0.01"
-                required
-                value={price}
-                onChange={(e) => setPrice(Number(e.target.value))}
-                className="w-full px-3 py-1.5 rounded-[7px] bg-[#FBFAF7] border border-[#E5E1D8] text-xs font-mono font-bold text-[#172033] focus:outline-none focus:border-[#3157D5] focus:bg-white focus:ring-1 focus:ring-[#3157D5] transition"
-              />
+              <label className="block text-xs font-semibold text-[#172033] mb-1">Unit Price (₹)</label>
+              <div className="relative">
+                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-mono font-bold text-[#667085]">₹</span>
+                <input
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  required
+                  value={price}
+                  onChange={(e) => setPrice(Number(e.target.value))}
+                  placeholder="e.g. 1299"
+                  className="w-full pl-6 pr-3 py-1.5 rounded-[7px] bg-[#FBFAF7] border border-[#E5E1D8] text-xs font-mono font-bold text-[#172033] focus:outline-none focus:border-[#3157D5] focus:bg-white focus:ring-1 focus:ring-[#3157D5] transition"
+                />
+              </div>
             </div>
             <div>
               <label className="block text-xs font-semibold text-[#172033] mb-1">Low Threshold</label>

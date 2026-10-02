@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import type { InventoryItem, Tenant, UpdateStockDto } from '../types';
 import { inventoryApi } from '../services/api';
+import { formatINR } from '../utils/currency';
 
 interface BarcodeScannerModalProps {
   isOpen: boolean;
@@ -397,12 +398,12 @@ export const BarcodeScannerModal: React.FC<BarcodeScannerModalProps> = ({
                   </div>
                   <div className="p-2.5 rounded-[7px] bg-white border border-[#EEEAE3] text-center">
                     <div className="text-[10px] uppercase font-mono text-[#667085]">Unit Price</div>
-                    <div className="text-lg font-bold font-mono text-[#172033] mt-0.5">${foundItem.price.toFixed(2)}</div>
+                    <div className="text-base font-bold font-mono text-[#172033] mt-0.5">{formatINR(foundItem.price)}</div>
                   </div>
                   <div className="p-2.5 rounded-[7px] bg-white border border-[#EEEAE3] text-center">
                     <div className="text-[10px] uppercase font-mono text-[#3157D5] font-semibold">Total Valuation</div>
-                    <div className="text-lg font-bold font-mono text-[#3157D5] mt-0.5">
-                      ${(foundItem.quantity * foundItem.price).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    <div className="text-base font-bold font-mono text-[#3157D5] mt-0.5">
+                      {formatINR(foundItem.quantity * foundItem.price)}
                     </div>
                   </div>
                 </div>

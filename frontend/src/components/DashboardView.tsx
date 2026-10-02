@@ -17,7 +17,6 @@ import {
 import {
   TrendingUp,
   TrendingDown,
-  DollarSign,
   Package,
   Boxes,
   AlertTriangle,
@@ -46,6 +45,7 @@ import type {
   DashboardAnalytics,
 } from '../types';
 import { analyticsApi } from '../services/api';
+import { formatINR, formatCompactINR } from '../utils/currency';
 
 interface DashboardViewProps {
   stats: DashboardStats | null;
@@ -91,13 +91,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
 
-  const formatCurrency = (val: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      maximumFractionDigits: 0,
-    }).format(val);
-  };
+  const formatCurrency = (val: number) => formatINR(val, { hideDecimalsIfWhole: true });
 
   const loadAnalytics = useCallback(async (days: number) => {
     if (!currentTenant?.id) return;
@@ -339,7 +333,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <div className="rounded-[9px] bg-white border border-[#E5E1D8] p-4 shadow-xs relative overflow-hidden">
           <div className="flex items-center justify-between text-[#667085]">
             <span className="text-[11px] font-mono uppercase tracking-wider font-semibold">Total Valuation</span>
-            <DollarSign className="w-4 h-4 text-[#3157D5]" />
+            <span className="w-4 h-4 rounded-[4px] bg-[#E9EEFF] text-[#3157D5] font-mono text-xs font-bold flex items-center justify-center border border-[#C7D7FE]">
+              ₹
+            </span>
           </div>
           <div className="text-2xl font-bold text-[#172033] mt-2 font-mono tracking-tight">
             {formatCurrency(summary.totalInventoryValue)}
@@ -639,7 +635,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     fontSize={10}
                     tickLine={false}
                     axisLine={false}
-                    tickFormatter={(val) => `$${val >= 1000 ? `${(val / 1000).toFixed(0)}k` : val}`}
+                    tickFormatter={(val) => formatCompactINR(val)}
                   />
                   <Tooltip content={<CategoryTooltip />} />
                   <Bar

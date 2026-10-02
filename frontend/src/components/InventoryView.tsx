@@ -12,6 +12,7 @@ import {
   ScanBarcode
 } from 'lucide-react';
 import type { InventoryItem, Tenant } from '../types';
+import { formatINR } from '../utils/currency';
 
 interface InventoryViewProps {
   items: InventoryItem[];
@@ -98,13 +99,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
     }
   };
 
-  const formatCurrency = (val: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      maximumFractionDigits: 2,
-    }).format(val);
-  };
+  const formatCurrency = (val: number) => formatINR(val);
 
   return (
     <div className="space-y-5">
