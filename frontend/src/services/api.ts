@@ -19,6 +19,7 @@ import type {
   InvitationDetails,
   AcceptInvitationRequest,
   TenantMember,
+  DashboardAnalytics,
 } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
@@ -354,4 +355,15 @@ export const invitationsApi = {
     return res.data;
   },
 };
+
+// --- Executive Visual Analytics API (Tenant Scoped) ---
+export const analyticsApi = {
+  getDashboard: async (timeRangeDays: number = 30): Promise<DashboardAnalytics> => {
+    const res = await apiClient.get<DashboardAnalytics>('/analytics/dashboard', {
+      params: { timeRangeDays },
+    });
+    return res.data;
+  },
+};
+
 

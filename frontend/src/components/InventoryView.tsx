@@ -21,6 +21,8 @@ interface InventoryViewProps {
   onOpenEditModal: (item: InventoryItem) => void;
   onOpenStockModal: (item: InventoryItem) => void;
   onDeleteItem: (id: string, name: string) => void;
+  initialCategory?: string;
+  initialStatus?: string;
 }
 
 export const InventoryView: React.FC<InventoryViewProps> = ({
@@ -32,12 +34,19 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
   onOpenEditModal,
   onOpenStockModal,
   onDeleteItem,
+  initialCategory = 'ALL',
+  initialStatus = 'ALL',
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('ALL');
-  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [categoryFilter, setCategoryFilter] = useState(initialCategory);
+  const [statusFilter, setStatusFilter] = useState(initialStatus);
   const [sortBy, setSortBy] = useState<'name' | 'quantity' | 'price' | 'updatedAt'>('updatedAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
+  React.useEffect(() => {
+    if (initialCategory) setCategoryFilter(initialCategory);
+    if (initialStatus) setStatusFilter(initialStatus);
+  }, [initialCategory, initialStatus]);
 
   // Extract unique categories
   const categories = React.useMemo(() => {

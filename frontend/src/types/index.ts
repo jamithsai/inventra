@@ -248,3 +248,77 @@ export interface FileUpdateEvent {
   timestamp: string;
 }
 
+// Executive Visual Analytics Types
+export interface InventorySummary {
+  totalProducts: number;
+  totalStockUnits: number;
+  inStockItems: number;
+  lowStockItems: number;
+  outOfStockItems: number;
+  totalInventoryValue: number;
+  categoriesCount: number;
+  averageItemPrice: number;
+  averageStockPerProduct: number;
+}
+
+export interface StockHealth {
+  inStockCount: number;
+  inStockPercentage: number;
+  lowStockCount: number;
+  lowStockPercentage: number;
+  outOfStockCount: number;
+  outOfStockPercentage: number;
+  totalItems: number;
+}
+
+export interface CategoryValue {
+  category: string;
+  productCount: number;
+  totalQuantity: number;
+  totalValue: number;
+  valuePercentage: number;
+}
+
+export interface TopItemValue {
+  id: string;
+  name: string;
+  sku: string;
+  category: string;
+  quantity: number;
+  price: number;
+  totalValue: number;
+  lowStockThreshold: number;
+  status: 'IN_STOCK' | 'LOW_STOCK' | 'OUT_OF_STOCK';
+  imageUrl?: string;
+}
+
+export interface StockMovementPoint {
+  date: string;
+  formattedDate: string;
+  stockAdded: number;
+  stockRemoved: number;
+  netChange: number;
+  transactionCount: number;
+}
+
+export interface ValueConcentration {
+  topCategoryName: string;
+  topCategoryPercentage: number;
+  top3CategoriesPercentage: number;
+  topValuedItemName: string;
+  topValuedItemPercentage: number;
+}
+
+export interface DashboardAnalytics {
+  tenantId: string;
+  timeRangeDays: number;
+  generatedAt: string;
+  summary: InventorySummary;
+  stockHealth: StockHealth;
+  categoryValue: CategoryValue[];
+  topItems: TopItemValue[];
+  stockMovement: StockMovementPoint[];
+  concentration: ValueConcentration;
+}
+
+

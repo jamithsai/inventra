@@ -181,9 +181,22 @@ npm run dev
 
 ---
 
+## 📊 Interactive Executive Visual Analytics Dashboard
+
+Inventra features an enterprise visual analytics suite with zero-latency tenant-scoped data aggregation:
+
+- **Executive KPI Metrics:** Real-time calculation of Total Valuation ($), Active SKUs, Stock Unit Volume, Healthy Stock %, and Attention Watchlist items.
+- **Stock Movement Trend (Area Chart):** Continuous time-series aggregation of inbound inventory additions vs. outbound stock deductions, tracking net velocity over 7-day, 30-day, or 90-day timeframes.
+- **Stock Health Distribution (Donut Chart):** Visual inventory segment classification (In Stock, Low Stock, Out of Stock) with click-through navigation to pre-filtered inventory tables.
+- **Valuation by Category (Interactive Bar Chart):** High-density category value analysis displaying portfolio dollar share and direct drill-down links.
+- **Leaderboard & Concentration Insights:** Ranked highest-valuation asset leaderboard and single-category/top-3 risk concentration metrics.
+- **Mathematical Multi-Tenant Isolation:** Analytics queries operate strictly through `ITenantContext` and EF Core Global Query Filters (`e.TenantId == CurrentTenantId`), calculating tenant metrics on the server with zero data leakage.
+
+---
+
 ## 🧪 Running Automated Security Verification Tests
 
-Execute the comprehensive xUnit test suite (25 automated integration tests covering authentication, tenant onboarding, tenant isolation, S3 key isolation, and cascade cleanup):
+Execute the comprehensive xUnit test suite (32 automated integration tests covering authentication, tenant onboarding, tenant isolation, executive analytics isolation, S3 key isolation, and cascade cleanup):
 
 ```powershell
 dotnet test backend/MultiTenantInventory.Tests/MultiTenantInventory.Tests.csproj

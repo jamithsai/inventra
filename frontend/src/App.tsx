@@ -68,6 +68,22 @@ export const App: React.FC = () => {
   const [transactions, setTransactions] = useState<InventoryTransaction[]>([]);
   const [files, setFiles] = useState<TenantFile[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+  const [inventoryCategoryFilter, setInventoryCategoryFilter] = useState<string>('ALL');
+  const [inventoryStatusFilter, setInventoryStatusFilter] = useState<string>('ALL');
+
+  const handleNavigateToInventoryWithFilter = (filter?: { category?: string; status?: string }) => {
+    if (filter?.category) {
+      setInventoryCategoryFilter(filter.category);
+    } else {
+      setInventoryCategoryFilter('ALL');
+    }
+    if (filter?.status) {
+      setInventoryStatusFilter(filter.status);
+    } else {
+      setInventoryStatusFilter('ALL');
+    }
+    setCurrentTab('inventory');
+  };
 
   // Public Token Invitation Handling
   const [invitationToken, setInvitationToken] = useState<string | null>(() => {
@@ -505,8 +521,10 @@ export const App: React.FC = () => {
               items={items}
               transactions={transactions}
               currentTenant={currentTenant}
-              onNavigateToInventory={() => setCurrentTab('inventory')}
+              currentUser={currentUser}
+              onNavigateToInventory={handleNavigateToInventoryWithFilter}
               onOpenAddModal={handleOpenAddModal}
+              onOpenEditModal={handleOpenEditModal}
             />
           )}
 
@@ -520,6 +538,8 @@ export const App: React.FC = () => {
               onOpenEditModal={handleOpenEditModal}
               onOpenStockModal={handleOpenStockModal}
               onDeleteItem={handleDeleteItem}
+              initialCategory={inventoryCategoryFilter}
+              initialStatus={inventoryStatusFilter}
             />
           )}
 
