@@ -22,8 +22,11 @@ public class AppDbContext : DbContext
     public DbSet<TenantFile> TenantFiles => Set<TenantFile>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<TenantInvitation> TenantInvitations => Set<TenantInvitation>();
+    public DbSet<Warehouse> Warehouses => Set<Warehouse>();
+    public DbSet<WarehouseStock> WarehouseStocks => Set<WarehouseStock>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
+
     {
         base.OnModelCreating(modelBuilder);
 
@@ -136,7 +139,51 @@ public class AppDbContext : DbContext
             // GLOBAL QUERY FILTER
             entity.HasQueryFilter(e => _tenantContext.CurrentTenantId != null && e.TenantId == _tenantContext.CurrentTenantId);
         });
+
+        // Warehouse Configuration + EF Core Global Query Filter
+        modelBuilder.Entity<Warehouse>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasMaxLength(100);
+            entity.Property(e => e.TenantId).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.Code).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.Address).HasMaxLength(300);
+            entity.Property(e => e.City).HasMaxLength(100);
+            entity.Property(e => e.State).HasMaxLength(100);
+            entity.HasIndex(e => new { e.TenantId, e.Code }).IsUnique();
+            entity.HasIndex(e => e.TenantId);
+
+            // GLOBAL QUERY FILTER
+            entity.HasQueryFilter(e => _tenantContext.CurrentTenantId != null && e.TenantId == _tenantContext.CurrentTenantId);
+        });
+
+        // WarehouseStock Configuration + EF Core Global Query Filter
+        modelBuilder.Entity<WarehouseStock>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasMaxLength(100);
+            entity.Property(e => e.TenantId).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.WarehouseId).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.ProductId).IsRequired().HasMaxLength(100);
+            entity.HasIndex(e => new { e.TenantId, e.WarehouseId, e.ProductId }).IsUnique();
+            entity.HasIndex(e => e.TenantId);
+
+            entity.HasOne(e => e.Warehouse)
+                  .WithMany(w => w.Stocks)
+                  .HasForeignKey(e => e.WarehouseId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Product)
+                  .WithMany()
+                  .HasForeignKey(e => e.ProductId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            // GLOBAL QUERY FILTER
+            entity.HasQueryFilter(e => _tenantContext.CurrentTenantId != null && e.TenantId == _tenantContext.CurrentTenantId);
+        });
     }
+
 
     public override int SaveChanges()
     {

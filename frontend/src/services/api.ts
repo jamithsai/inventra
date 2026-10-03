@@ -20,7 +20,16 @@ import type {
   AcceptInvitationRequest,
   TenantMember,
   DashboardAnalytics,
+  Warehouse,
+  WarehouseDetail,
+  WarehouseStockItem,
+  CreateWarehouseRequest,
+  UpdateWarehouseRequest,
+  StockTransferRequest,
+  StockTransferResult,
+  ProductWarehouseStock,
 } from '../types';
+
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -236,6 +245,47 @@ export const inventoryApi = {
     return res.data;
   },
 };
+
+// --- Warehouses API (Multi-Warehouse Support) ---
+export const warehousesApi = {
+  getAll: async (): Promise<Warehouse[]> => {
+    const res = await apiClient.get<Warehouse[]>('/warehouses');
+    return res.data;
+  },
+  getById: async (id: string): Promise<WarehouseDetail> => {
+    const res = await apiClient.get<WarehouseDetail>(`/warehouses/${id}`);
+    return res.data;
+  },
+  getStock: async (id: string): Promise<WarehouseStockItem[]> => {
+    const res = await apiClient.get<WarehouseStockItem[]>(`/warehouses/${id}/stock`);
+    return res.data;
+  },
+  getProductStock: async (productId: string): Promise<ProductWarehouseStock[]> => {
+    const res = await apiClient.get<ProductWarehouseStock[]>(`/warehouses/product/${productId}`);
+    return res.data;
+  },
+  create: async (data: CreateWarehouseRequest): Promise<Warehouse> => {
+    const res = await apiClient.post<Warehouse>('/warehouses', data);
+    return res.data;
+  },
+  update: async (id: string, data: UpdateWarehouseRequest): Promise<Warehouse> => {
+    const res = await apiClient.put<Warehouse>(`/warehouses/${id}`, data);
+    return res.data;
+  },
+  delete: async (id: string): Promise<{ success: boolean; message: string }> => {
+    const res = await apiClient.delete(`/warehouses/${id}`);
+    return res.data;
+  },
+  transfer: async (data: StockTransferRequest): Promise<StockTransferResult> => {
+    const res = await apiClient.post<StockTransferResult>('/warehouses/transfer', data);
+    return res.data;
+  },
+  adjustStock: async (warehouseId: string, productId: string, data: UpdateStockDto): Promise<WarehouseStockItem> => {
+    const res = await apiClient.post<WarehouseStockItem>(`/warehouses/${warehouseId}/stock/${productId}`, data);
+    return res.data;
+  },
+};
+
 
 // --- Files API (S3 Tenant Isolated) ---
 export const filesApi = {

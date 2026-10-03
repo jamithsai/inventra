@@ -16,6 +16,7 @@ import {
   RotateCw, 
   LogOut, 
   ArrowRight,
+  ArrowLeftRight,
   Sparkles,
   Command as CommandIcon,
   CornerDownLeft
@@ -45,6 +46,7 @@ interface CommandPaletteModalProps {
   onNavigateWithFilter: (filter?: { category?: string; status?: string }) => void;
   onOpenAddProduct: () => void;
   onOpenBarcodeScanner: () => void;
+  onOpenTransferModal?: () => void;
   onSelectTenant: (tenantId: string) => void;
   onRefreshData: () => void;
   onLogout: () => void;
@@ -60,6 +62,7 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
   onNavigateWithFilter,
   onOpenAddProduct,
   onOpenBarcodeScanner,
+  onOpenTransferModal,
   onSelectTenant,
   onRefreshData,
   onLogout,
@@ -109,6 +112,23 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
         action: () => {
           onClose();
           onOpenAddProduct();
+        },
+      },
+      {
+        id: 'cmd-transfer-stock',
+        category: 'INVENTORY',
+        label: 'Transfer Stock Across Warehouses',
+        description: 'Initiate an atomic inter-facility stock transfer with audit trail',
+        keywords: ['transfer', 'move', 'warehouse', 'facility', 'relocate', 'stock', 'inventory', 'shift'],
+        icon: <ArrowLeftRight className="w-4 h-4 text-[#3157D5]" />,
+        badge: 'Multi-Warehouse',
+        action: () => {
+          onClose();
+          if (onOpenTransferModal) {
+            onOpenTransferModal();
+          } else {
+            onNavigateTab('warehouses');
+          }
         },
       },
       {
@@ -174,6 +194,19 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
         action: () => {
           onClose();
           onNavigateWithFilter({ category: 'ALL', status: 'ALL' });
+        },
+      },
+      {
+        id: 'cmd-nav-warehouses',
+        category: 'NAVIGATION',
+        label: 'Warehouses & Facilities',
+        description: 'Manage warehouse locations, partition stock, and track capacity',
+        keywords: ['warehouses', 'facilities', 'hubs', 'storage', 'depot', 'locations', 'transfer'],
+        icon: <Building2 className="w-4 h-4 text-[#3157D5]" />,
+        badge: 'Multi-Warehouse',
+        action: () => {
+          onClose();
+          onNavigateTab('warehouses');
         },
       },
       {

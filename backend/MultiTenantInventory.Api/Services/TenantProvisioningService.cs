@@ -216,7 +216,25 @@ public class TenantProvisioningService : ITenantProvisioningService
             };
             _dbContext.TenantMemberships.Add(membership);
 
+            // D2. Create Default Warehouse Facility for New Tenant
+            var defaultWarehouse = new Warehouse
+            {
+                Id = $"wh_{slug.Replace("-", "_")}_main",
+                TenantId = slug,
+                Name = $"{request.Name.Trim()} Central Facility",
+                Code = "WH-MAIN",
+                Address = "Primary Logistics Hub",
+                City = "Hyderabad",
+                State = "Telangana",
+                IsActive = true,
+                IsDefault = true,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+            _dbContext.Warehouses.Add(defaultWarehouse);
+
             // E. Record Audit Log for Platform Tracking
+
             var auditLog = new AuditLog
             {
                 Id = Guid.NewGuid().ToString(),

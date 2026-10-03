@@ -60,14 +60,23 @@ public class InventoryService : IInventoryService
             items = items.Where(i => i.Status == stat).ToList();
         }
 
+        await PopulateWarehouseBreakdownsAsync(items, cancellationToken);
+
         return items;
     }
 
     public async Task<InventoryItem?> GetItemByIdAsync(string id, CancellationToken cancellationToken = default)
     {
         // EF Core Global Query Filter guarantees that foreign tenant items return null
-        return await _dbContext.InventoryItems
+        var item = await _dbContext.InventoryItems
             .FirstOrDefaultAsync(i => i.Id == id, cancellationToken);
+
+        if (item != null)
+        {
+            await PopulateWarehouseBreakdownsAsync(new[] { item }, cancellationToken);
+        }
+
+        return item;
     }
 
     public async Task<InventoryItem?> GetItemByBarcodeAsync(string barcode, CancellationToken cancellationToken = default)
@@ -77,8 +86,15 @@ public class InventoryService : IInventoryService
 
         var b = barcode.Trim();
         // EF Core Global Query Filter guarantees that foreign tenant items return null
-        return await _dbContext.InventoryItems
+        var item = await _dbContext.InventoryItems
             .FirstOrDefaultAsync(i => i.Barcode == b, cancellationToken);
+
+        if (item != null)
+        {
+            await PopulateWarehouseBreakdownsAsync(new[] { item }, cancellationToken);
+        }
+
+        return item;
     }
 
     public async Task<InventoryItem> CreateItemAsync(CreateInventoryItemDto dto, CancellationToken cancellationToken = default)
@@ -99,62 +115,116 @@ public class InventoryService : IInventoryService
             }
         }
 
-        var item = new InventoryItem
+        using var dbTx = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+        try
         {
-            Id = Guid.NewGuid().ToString(),
-            TenantId = tenantId,
-            Name = dto.Name.Trim(),
-            SKU = dto.SKU.Trim().ToUpper(),
-            Category = dto.Category.Trim(),
-            Quantity = dto.Quantity,
-            Price = dto.Price,
-            LowStockThreshold = dto.LowStockThreshold,
-            Barcode = normalizedBarcode,
-            ImageUrl = dto.ImageUrl,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
+            Warehouse? targetWarehouse = null;
+            if (!string.IsNullOrWhiteSpace(dto.WarehouseId))
+            {
+                targetWarehouse = await _dbContext.Warehouses.FirstOrDefaultAsync(w => w.Id == dto.WarehouseId, cancellationToken);
+                if (targetWarehouse == null)
+                {
+                    throw new InvalidOperationException($"Target warehouse '{dto.WarehouseId}' not found in active workspace.");
+                }
+                if (!targetWarehouse.IsActive)
+                {
+                    throw new InvalidOperationException($"Target warehouse '{targetWarehouse.Name}' ({targetWarehouse.Code}) is inactive and cannot receive stock.");
+                }
+            }
+            else
+            {
+                targetWarehouse = await _dbContext.Warehouses
+                    .OrderByDescending(w => w.IsDefault)
+                    .ThenBy(w => w.CreatedAt)
+                    .FirstOrDefaultAsync(w => w.IsActive, cancellationToken);
+            }
 
-        _dbContext.InventoryItems.Add(item);
+            if (dto.Quantity > 0 && targetWarehouse == null)
+            {
+                throw new InvalidOperationException("Cannot create product with initial stock because no active warehouse facilities exist in this workspace. Please create or activate a warehouse facility first.");
+            }
 
-        // Record Initial Transaction
-        var initialTx = new InventoryTransaction
+            var item = new InventoryItem
+            {
+                Id = Guid.NewGuid().ToString(),
+                TenantId = tenantId,
+                Name = dto.Name.Trim(),
+                SKU = dto.SKU.Trim().ToUpper(),
+                Category = dto.Category.Trim(),
+                Quantity = dto.Quantity,
+                Price = dto.Price,
+                LowStockThreshold = dto.LowStockThreshold,
+                Barcode = normalizedBarcode,
+                ImageUrl = dto.ImageUrl,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+
+            _dbContext.InventoryItems.Add(item);
+
+            if (targetWarehouse != null)
+            {
+                var warehouseStock = new WarehouseStock
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    TenantId = tenantId,
+                    WarehouseId = targetWarehouse.Id,
+                    ProductId = item.Id,
+                    Quantity = dto.Quantity,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                _dbContext.WarehouseStocks.Add(warehouseStock);
+            }
+
+            // Record Initial Transaction
+            var initialTx = new InventoryTransaction
+            {
+                Id = Guid.NewGuid().ToString(),
+                TenantId = tenantId,
+                InventoryItemId = item.Id,
+                ProductName = item.Name,
+                Type = "IN",
+                Quantity = item.Quantity,
+                Note = targetWarehouse != null 
+                    ? $"Initial stock creation in {targetWarehouse.Code} ({targetWarehouse.Name})"
+                    : "Initial stock creation",
+                CreatedAt = DateTime.UtcNow
+            };
+            _dbContext.InventoryTransactions.Add(initialTx);
+
+            // Record Audit Log
+            var auditLog = new AuditLog
+            {
+                Id = Guid.NewGuid().ToString(),
+                TenantId = tenantId,
+                UserId = _tenantContext.CurrentUserId ?? "system",
+                UserName = _tenantContext.CurrentUserName ?? "Admin",
+                Action = "PRODUCT_CREATED",
+                EntityType = "InventoryItem",
+                EntityId = item.Id,
+                Details = $"Created product '{item.Name}' with SKU '{item.SKU}' and initial stock of {item.Quantity}."
+            };
+            _dbContext.AuditLogs.Add(auditLog);
+
+            await _dbContext.SaveChangesAsync(cancellationToken);
+            await dbTx.CommitAsync(cancellationToken);
+
+            // Real-time broadcast to all tenant users
+            var userId = _tenantContext.CurrentUserId ?? "system";
+            var userName = _tenantContext.CurrentUserName ?? "Admin";
+            _ = _notificationService.NotifyItemCreatedAsync(tenantId, item, userId, userName);
+            _ = _notificationService.NotifyTransactionAsync(tenantId, initialTx);
+            _ = _notificationService.NotifyAuditLogAsync(tenantId, auditLog);
+
+            await PopulateWarehouseBreakdownsAsync(new[] { item }, cancellationToken);
+
+            return item;
+        }
+        catch
         {
-            Id = Guid.NewGuid().ToString(),
-            TenantId = tenantId,
-            InventoryItemId = item.Id,
-            ProductName = item.Name,
-            Type = "IN",
-            Quantity = item.Quantity,
-            Note = "Initial stock creation",
-            CreatedAt = DateTime.UtcNow
-        };
-        _dbContext.InventoryTransactions.Add(initialTx);
-
-        // Record Audit Log
-        var auditLog = new AuditLog
-        {
-            Id = Guid.NewGuid().ToString(),
-            TenantId = tenantId,
-            UserId = _tenantContext.CurrentUserId ?? "system",
-            UserName = _tenantContext.CurrentUserName ?? "Admin",
-            Action = "PRODUCT_CREATED",
-            EntityType = "InventoryItem",
-            EntityId = item.Id,
-            Details = $"Created product '{item.Name}' with SKU '{item.SKU}' and initial stock of {item.Quantity}."
-        };
-        _dbContext.AuditLogs.Add(auditLog);
-
-        await _dbContext.SaveChangesAsync(cancellationToken);
-
-        // Real-time broadcast to all tenant users
-        var userId = _tenantContext.CurrentUserId ?? "system";
-        var userName = _tenantContext.CurrentUserName ?? "Admin";
-        _ = _notificationService.NotifyItemCreatedAsync(tenantId, item, userId, userName);
-        _ = _notificationService.NotifyTransactionAsync(tenantId, initialTx);
-        _ = _notificationService.NotifyAuditLogAsync(tenantId, auditLog);
-
-        return item;
+            await dbTx.RollbackAsync(cancellationToken);
+            throw;
+        }
     }
 
     public async Task<InventoryItem?> UpdateItemAsync(string id, UpdateInventoryItemDto dto, CancellationToken cancellationToken = default)
@@ -189,51 +259,104 @@ public class InventoryService : IInventoryService
         }
 
         InventoryTransaction? quantityTx = null;
-        if (dto.Quantity.HasValue && dto.Quantity.Value != item.Quantity)
+        using var dbTx = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+        try
         {
-            var diff = dto.Quantity.Value - item.Quantity;
-            item.Quantity = dto.Quantity.Value;
+            if (dto.Quantity.HasValue && dto.Quantity.Value != item.Quantity)
+            {
+                var diff = dto.Quantity.Value - item.Quantity;
+                
+                // Adjust default warehouse stock
+                var defaultWarehouse = await _dbContext.Warehouses
+                    .OrderByDescending(w => w.IsDefault)
+                    .ThenBy(w => w.CreatedAt)
+                    .FirstOrDefaultAsync(w => w.IsActive, cancellationToken);
 
-            quantityTx = new InventoryTransaction
+                if (defaultWarehouse == null)
+                {
+                    throw new InvalidOperationException("Cannot update product quantity because no active warehouse facilities exist in this workspace.");
+                }
+
+                var stock = await _dbContext.WarehouseStocks
+                    .FirstOrDefaultAsync(ws => ws.WarehouseId == defaultWarehouse.Id && ws.ProductId == item.Id, cancellationToken);
+
+                if (stock == null)
+                {
+                    stock = new WarehouseStock
+                    {
+                        Id = Guid.NewGuid().ToString(),
+                        TenantId = tenantId,
+                        WarehouseId = defaultWarehouse.Id,
+                        ProductId = item.Id,
+                        Quantity = Math.Max(0, dto.Quantity.Value),
+                        UpdatedAt = DateTime.UtcNow
+                    };
+                    _dbContext.WarehouseStocks.Add(stock);
+                }
+                else
+                {
+                    stock.Quantity = Math.Max(0, stock.Quantity + diff);
+                    stock.UpdatedAt = DateTime.UtcNow;
+                }
+
+                await _dbContext.SaveChangesAsync(cancellationToken);
+
+                // Synchronize aggregate quantity from active warehouse stocks
+                var aggregateSum = await _dbContext.WarehouseStocks
+                    .Where(ws => ws.ProductId == item.Id && ws.Warehouse!.IsActive)
+                    .SumAsync(ws => ws.Quantity, cancellationToken);
+
+                item.Quantity = aggregateSum;
+
+                quantityTx = new InventoryTransaction
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    TenantId = tenantId,
+                    InventoryItemId = item.Id,
+                    ProductName = item.Name,
+                    Type = diff > 0 ? "IN" : "OUT",
+                    Quantity = Math.Abs(diff),
+                    Note = "Direct quantity edit",
+                    CreatedAt = DateTime.UtcNow
+                };
+                _dbContext.InventoryTransactions.Add(quantityTx);
+            }
+
+            item.UpdatedAt = DateTime.UtcNow;
+
+            var auditLog = new AuditLog
             {
                 Id = Guid.NewGuid().ToString(),
                 TenantId = tenantId,
-                InventoryItemId = item.Id,
-                ProductName = item.Name,
-                Type = diff > 0 ? "IN" : "OUT",
-                Quantity = Math.Abs(diff),
-                Note = "Direct quantity edit",
-                CreatedAt = DateTime.UtcNow
+                UserId = userId,
+                UserName = userName,
+                Action = "PRODUCT_UPDATED",
+                EntityType = "InventoryItem",
+                EntityId = item.Id,
+                Details = $"Updated product '{item.Name}' (SKU: {item.SKU})."
             };
-            _dbContext.InventoryTransactions.Add(quantityTx);
+            _dbContext.AuditLogs.Add(auditLog);
+
+            await _dbContext.SaveChangesAsync(cancellationToken);
+            await dbTx.CommitAsync(cancellationToken);
+
+            // Real-time broadcast
+            _ = _notificationService.NotifyItemUpdatedAsync(tenantId, item, userId, userName);
+            if (quantityTx != null)
+            {
+                _ = _notificationService.NotifyTransactionAsync(tenantId, quantityTx);
+            }
+            _ = _notificationService.NotifyAuditLogAsync(tenantId, auditLog);
+
+            await PopulateWarehouseBreakdownsAsync(new[] { item }, cancellationToken);
+
+            return item;
         }
-
-        item.UpdatedAt = DateTime.UtcNow;
-
-        var auditLog = new AuditLog
+        catch
         {
-            Id = Guid.NewGuid().ToString(),
-            TenantId = tenantId,
-            UserId = userId,
-            UserName = userName,
-            Action = "PRODUCT_UPDATED",
-            EntityType = "InventoryItem",
-            EntityId = item.Id,
-            Details = $"Updated product '{item.Name}' (SKU: {item.SKU})."
-        };
-        _dbContext.AuditLogs.Add(auditLog);
-
-        await _dbContext.SaveChangesAsync(cancellationToken);
-
-        // Real-time broadcast
-        _ = _notificationService.NotifyItemUpdatedAsync(tenantId, item, userId, userName);
-        if (quantityTx != null)
-        {
-            _ = _notificationService.NotifyTransactionAsync(tenantId, quantityTx);
+            await dbTx.RollbackAsync(cancellationToken);
+            throw;
         }
-        _ = _notificationService.NotifyAuditLogAsync(tenantId, auditLog);
-
-        return item;
     }
 
     public async Task<bool> DeleteItemAsync(string id, CancellationToken cancellationToken = default)
@@ -269,10 +392,16 @@ public class InventoryService : IInventoryService
             }
         }
 
-        // 2. Remove the inventory item entity
+        // 2. Remove warehouse stock records for this item
+        var stocks = await _dbContext.WarehouseStocks
+            .Where(ws => ws.ProductId == id)
+            .ToListAsync(cancellationToken);
+        _dbContext.WarehouseStocks.RemoveRange(stocks);
+
+        // 3. Remove the inventory item entity
         _dbContext.InventoryItems.Remove(item);
 
-        // 3. Record comprehensive audit log
+        // 4. Record comprehensive audit log
         var auditLog = new AuditLog
         {
             Id = Guid.NewGuid().ToString(),
@@ -306,57 +435,124 @@ public class InventoryService : IInventoryService
         var userId = _tenantContext.CurrentUserId ?? "system";
         var userName = _tenantContext.CurrentUserName ?? "Admin";
 
-        var type = dto.Type.ToUpperInvariant();
-        int previousQty = item.Quantity;
-
-        if (type == "IN")
+        using var dbTx = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+        try
         {
-            item.Quantity += Math.Abs(dto.QuantityChange);
+            Warehouse? targetWarehouse = null;
+            if (!string.IsNullOrWhiteSpace(dto.WarehouseId))
+            {
+                targetWarehouse = await _dbContext.Warehouses
+                    .FirstOrDefaultAsync(w => w.Id == dto.WarehouseId, cancellationToken);
+
+                if (targetWarehouse == null)
+                {
+                    throw new InvalidOperationException($"Target warehouse '{dto.WarehouseId}' not found in active workspace.");
+                }
+            }
+            else
+            {
+                targetWarehouse = await _dbContext.Warehouses
+                    .OrderByDescending(w => w.IsDefault)
+                    .ThenBy(w => w.CreatedAt)
+                    .FirstOrDefaultAsync(w => w.IsActive, cancellationToken);
+            }
+
+            if (targetWarehouse == null)
+            {
+                throw new InvalidOperationException("Cannot adjust stock because no active warehouse facilities exist in this workspace.");
+            }
+
+            if (!targetWarehouse.IsActive)
+            {
+                throw new InvalidOperationException($"Cannot adjust stock in inactive warehouse '{targetWarehouse.Name}'.");
+            }
+
+            var type = (dto.Type ?? "IN").ToUpperInvariant();
+            int previousQty = item.Quantity;
+
+            var stock = await _dbContext.WarehouseStocks
+                .FirstOrDefaultAsync(ws => ws.WarehouseId == targetWarehouse.Id && ws.ProductId == item.Id, cancellationToken);
+
+            if (stock == null)
+            {
+                stock = new WarehouseStock
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    TenantId = tenantId,
+                    WarehouseId = targetWarehouse.Id,
+                    ProductId = item.Id,
+                    Quantity = 0,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                _dbContext.WarehouseStocks.Add(stock);
+            }
+
+            if (type == "IN")
+            {
+                stock.Quantity += Math.Abs(dto.QuantityChange);
+            }
+            else if (type == "OUT")
+            {
+                stock.Quantity = Math.Max(0, stock.Quantity - Math.Abs(dto.QuantityChange));
+            }
+            else // "ADJUSTMENT" / override
+            {
+                stock.Quantity = Math.Max(0, dto.QuantityChange);
+            }
+            stock.UpdatedAt = DateTime.UtcNow;
+
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            // Synchronize aggregate product quantity from active warehouse stocks
+            var activeStockSum = await _dbContext.WarehouseStocks
+                .Where(ws => ws.ProductId == item.Id && ws.Warehouse!.IsActive)
+                .SumAsync(ws => ws.Quantity, cancellationToken);
+
+            item.Quantity = activeStockSum;
+            item.UpdatedAt = DateTime.UtcNow;
+
+            var transaction = new InventoryTransaction
+            {
+                Id = Guid.NewGuid().ToString(),
+                TenantId = tenantId,
+                InventoryItemId = item.Id,
+                ProductName = item.Name,
+                Type = type,
+                Quantity = type == "ADJUSTMENT" ? (item.Quantity - previousQty) : Math.Abs(dto.QuantityChange),
+                Note = dto.Note ?? $"Stock adjustment in {targetWarehouse.Code}",
+                CreatedAt = DateTime.UtcNow
+            };
+            _dbContext.InventoryTransactions.Add(transaction);
+
+            var auditLog = new AuditLog
+            {
+                Id = Guid.NewGuid().ToString(),
+                TenantId = tenantId,
+                UserId = userId,
+                UserName = userName,
+                Action = "STOCK_UPDATED",
+                EntityType = "InventoryItem",
+                EntityId = item.Id,
+                Details = $"Stock adjusted for '{item.Name}' in '{targetWarehouse.Name}': {previousQty} → {item.Quantity} ({type}). Reason: {dto.Note}"
+            };
+            _dbContext.AuditLogs.Add(auditLog);
+
+            await _dbContext.SaveChangesAsync(cancellationToken);
+            await dbTx.CommitAsync(cancellationToken);
+
+            // Real-time broadcast
+            _ = _notificationService.NotifyStockAdjustedAsync(tenantId, item, transaction, userId, userName);
+            _ = _notificationService.NotifyAuditLogAsync(tenantId, auditLog);
+
+            await PopulateWarehouseBreakdownsAsync(new[] { item }, cancellationToken);
+
+            return item;
         }
-        else if (type == "OUT")
+        catch
         {
-            item.Quantity = Math.Max(0, item.Quantity - Math.Abs(dto.QuantityChange));
+            await dbTx.RollbackAsync(cancellationToken);
+            throw;
         }
-        else // "ADJUSTMENT" / override
-        {
-            item.Quantity = Math.Max(0, dto.QuantityChange);
-        }
-
-        item.UpdatedAt = DateTime.UtcNow;
-
-        var transaction = new InventoryTransaction
-        {
-            Id = Guid.NewGuid().ToString(),
-            TenantId = tenantId,
-            InventoryItemId = item.Id,
-            ProductName = item.Name,
-            Type = type,
-            Quantity = type == "ADJUSTMENT" ? (item.Quantity - previousQty) : Math.Abs(dto.QuantityChange),
-            Note = dto.Note ?? "Stock level adjustment",
-            CreatedAt = DateTime.UtcNow
-        };
-        _dbContext.InventoryTransactions.Add(transaction);
-
-        var auditLog = new AuditLog
-        {
-            Id = Guid.NewGuid().ToString(),
-            TenantId = tenantId,
-            UserId = userId,
-            UserName = userName,
-            Action = "STOCK_UPDATED",
-            EntityType = "InventoryItem",
-            EntityId = item.Id,
-            Details = $"Stock adjusted for '{item.Name}': {previousQty} → {item.Quantity} ({type}). Reason: {dto.Note}"
-        };
-        _dbContext.AuditLogs.Add(auditLog);
-
-        await _dbContext.SaveChangesAsync(cancellationToken);
-
-        // Real-time broadcast
-        _ = _notificationService.NotifyStockAdjustedAsync(tenantId, item, transaction, userId, userName);
-        _ = _notificationService.NotifyAuditLogAsync(tenantId, auditLog);
-
-        return item;
     }
 
     public async Task<List<InventoryTransaction>> GetTransactionsAsync(string? itemId = null, CancellationToken cancellationToken = default)
@@ -382,5 +578,50 @@ public class InventoryService : IInventoryService
             TotalInventoryValue = items.Sum(i => i.Quantity * i.Price),
             CategoriesCount = items.Select(i => i.Category).Distinct().Count()
         };
+    }
+
+    private async Task PopulateWarehouseBreakdownsAsync(IEnumerable<InventoryItem> items, CancellationToken cancellationToken)
+    {
+        var itemList = items.ToList();
+        if (!itemList.Any()) return;
+
+        var itemIds = itemList.Select(i => i.Id).ToList();
+        var warehouses = await _dbContext.Warehouses
+            .OrderByDescending(w => w.IsDefault)
+            .ThenBy(w => w.Name)
+            .ToListAsync(cancellationToken);
+
+        var stocks = await _dbContext.WarehouseStocks
+            .Where(ws => itemIds.Contains(ws.ProductId))
+            .ToListAsync(cancellationToken);
+
+        var stocksByProduct = stocks.GroupBy(ws => ws.ProductId)
+            .ToDictionary(g => g.Key, g => g.ToDictionary(s => s.WarehouseId));
+
+        foreach (var item in itemList)
+        {
+            stocksByProduct.TryGetValue(item.Id, out var itemWarehouseMap);
+            item.WarehouseStocks = warehouses.Select(w =>
+            {
+                WarehouseStock? stock = null;
+                if (itemWarehouseMap != null)
+                {
+                    itemWarehouseMap.TryGetValue(w.Id, out stock);
+                }
+
+                return new ProductWarehouseStockDto
+                {
+                    WarehouseId = w.Id,
+                    WarehouseName = w.Name,
+                    WarehouseCode = w.Code,
+                    City = w.City,
+                    State = w.State,
+                    IsActive = w.IsActive,
+                    IsDefault = w.IsDefault,
+                    Quantity = stock?.Quantity ?? 0,
+                    UpdatedAt = stock?.UpdatedAt ?? w.UpdatedAt
+                };
+            }).ToList();
+        }
     }
 }

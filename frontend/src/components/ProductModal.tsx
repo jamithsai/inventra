@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { X, Box, AlertCircle } from 'lucide-react';
-import type { InventoryItem, CreateInventoryItemDto, Tenant } from '../types';
+import { Box, X, AlertCircle, Building2 } from 'lucide-react';
+import type { InventoryItem, CreateInventoryItemDto, Tenant, Warehouse } from '../types';
 
 interface ProductModalProps {
   isOpen: boolean;
@@ -8,6 +8,7 @@ interface ProductModalProps {
   onSave: (data: CreateInventoryItemDto) => Promise<void>;
   editingItem: InventoryItem | null;
   currentTenant: Tenant | null;
+  warehouses?: Warehouse[];
   initialBarcode?: string;
 }
 
@@ -17,6 +18,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   onSave,
   editingItem,
   currentTenant,
+  warehouses = [],
   initialBarcode = '',
 }) => {
   const [name, setName] = useState('');
@@ -27,6 +29,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   const [lowStockThreshold, setLowStockThreshold] = useState(5);
   const [barcode, setBarcode] = useState('');
   const [imageUrl, setImageUrl] = useState('');
+  const [warehouseId, setWarehouseId] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -45,6 +48,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
       setLowStockThreshold(editingItem.lowStockThreshold);
       setBarcode(editingItem.barcode || '');
       setImageUrl(editingItem.imageUrl || '');
+      setWarehouseId('');
     } else {
       const prefix = currentTenant?.id.split('-')[0].toUpperCase() || 'SKU';
       setName('');
@@ -55,9 +59,12 @@ export const ProductModal: React.FC<ProductModalProps> = ({
       setLowStockThreshold(5);
       setBarcode(initialBarcode || '');
       setImageUrl('');
+      // Default to default warehouse or first active warehouse
+      const defaultWh = warehouses.find(w => w.isDefault) || warehouses.find(w => w.isActive) || warehouses[0];
+      setWarehouseId(defaultWh?.id || '');
     }
     setError(null);
-  }, [editingItem, isOpen, currentTenant, initialBarcode]);
+  }, [editingItem, isOpen, currentTenant, initialBarcode, warehouses]);
 
   if (!isOpen) return null;
 
@@ -75,6 +82,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
         lowStockThreshold: Number(lowStockThreshold),
         barcode: barcode.trim() || undefined,
         imageUrl: imageUrl || undefined,
+        warehouseId: !editingItem && warehouseId ? warehouseId : undefined,
       });
       onClose();
     } catch (err: any) {
@@ -86,7 +94,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#172033]/50 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="w-full max-w-lg rounded-[9px] bg-white border border-[#E5E1D8] shadow-2xl p-6 space-y-4">
+      <div className="w-full max-w-lg rounded-[9px] bg-white border border-[#E5E1D8] shadow-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
         {/* Modal Header */}
         <div className="flex items-center justify-between pb-3 border-b border-[#EEEAE3]">
           <div className="flex items-center space-x-2.5">
@@ -156,6 +164,33 @@ export const ProductModal: React.FC<ProductModalProps> = ({
               />
             </div>
           </div>
+
+          {!editingItem && warehouses.length > 0 && (
+            <div>
+              <label className="block text-xs font-semibold text-[#172033] mb-1">
+                Initial Stock Warehouse Facility *
+              </label>
+              <div className="relative">
+                <Building2 className="w-3.5 h-3.5 text-[#667085] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <select
+                  value={warehouseId}
+                  onChange={(e) => setWarehouseId(e.target.value)}
+                  className="w-full pl-8 pr-3 py-1.5 rounded-[7px] bg-[#FBFAF7] border border-[#E5E1D8] text-xs font-medium text-[#172033] focus:outline-none focus:border-[#3157D5] focus:bg-white focus:ring-1 focus:ring-[#3157D5] transition"
+                >
+                  {warehouses
+                    .filter((w) => w.isActive)
+                    .map((w) => (
+                      <option key={w.id} value={w.id}>
+                        {w.name} ({w.code}) {w.city ? `— ${w.city}` : ''} {w.isDefault ? '⭐ [Default Facility]' : ''}
+                      </option>
+                    ))}
+                </select>
+              </div>
+              <p className="text-[10px] text-[#667085] mt-1 font-mono">
+                The initial stock units will be allocated to this facility's inventory partition.
+              </p>
+            </div>
+          )}
 
           <div>
             <div className="flex items-center justify-between mb-1">

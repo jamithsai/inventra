@@ -1,3 +1,6 @@
+using System.ComponentModel.DataAnnotations.Schema;
+using MultiTenantInventory.Api.DTOs;
+
 namespace MultiTenantInventory.Api.Models;
 
 public class InventoryItem : ITenantEntity
@@ -20,4 +23,8 @@ public class InventoryItem : ITenantEntity
         : Quantity <= LowStockThreshold 
             ? "LOW_STOCK" 
             : "IN_STOCK";
+
+    [NotMapped]
+    public List<ProductWarehouseStockDto> WarehouseStocks { get; set; } = new();
 }
+

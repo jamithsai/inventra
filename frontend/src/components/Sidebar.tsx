@@ -9,7 +9,7 @@ import {
   Building2
 } from 'lucide-react';
 
-export type TabType = 'dashboard' | 'inventory' | 'files' | 'audit' | 'security-demo' | 'architecture' | 'platform-tenants';
+export type TabType = 'dashboard' | 'inventory' | 'warehouses' | 'files' | 'audit' | 'security-demo' | 'architecture' | 'platform-tenants';
 
 interface SidebarProps {
   currentTab: TabType;
@@ -38,12 +38,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
       icon: <Package className="w-4 h-4" />,
     },
     {
+      id: 'warehouses',
+      label: 'Warehouses',
+      icon: <Building2 className="w-4 h-4" />,
+    },
+    {
       id: 'files',
       label: 'Storage & Files',
       icon: <FolderLock className="w-4 h-4" />,
       badge: 'S3',
     },
   ];
+
 
   const adminItems: { id: TabType; label: string; icon: React.ReactNode; badge?: string }[] = [
     {

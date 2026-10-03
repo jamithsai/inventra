@@ -28,6 +28,46 @@ public static class DbSeeder
                 // Column already exists
             }
 
+            // Ensure Warehouse and WarehouseStock tables exist for existing SQLite database files
+            try
+            {
+                await context.Database.ExecuteSqlRawAsync(@"
+                    CREATE TABLE IF NOT EXISTS Warehouses (
+                        Id TEXT PRIMARY KEY,
+                        TenantId TEXT NOT NULL,
+                        Name TEXT NOT NULL,
+                        Code TEXT NOT NULL,
+                        Address TEXT,
+                        City TEXT,
+                        State TEXT,
+                        IsActive INTEGER NOT NULL DEFAULT 1,
+                        IsDefault INTEGER NOT NULL DEFAULT 0,
+                        CreatedAt TEXT NOT NULL,
+                        UpdatedAt TEXT NOT NULL
+                    );
+                    CREATE UNIQUE INDEX IF NOT EXISTS IX_Warehouses_TenantId_Code ON Warehouses (TenantId, Code);
+                    CREATE INDEX IF NOT EXISTS IX_Warehouses_TenantId ON Warehouses (TenantId);
+
+                    CREATE TABLE IF NOT EXISTS WarehouseStocks (
+                        Id TEXT PRIMARY KEY,
+                        TenantId TEXT NOT NULL,
+                        WarehouseId TEXT NOT NULL,
+                        ProductId TEXT NOT NULL,
+                        Quantity INTEGER NOT NULL DEFAULT 0,
+                        UpdatedAt TEXT NOT NULL,
+                        FOREIGN KEY (WarehouseId) REFERENCES Warehouses(Id) ON DELETE CASCADE,
+                        FOREIGN KEY (ProductId) REFERENCES InventoryItems(Id) ON DELETE CASCADE
+                    );
+                    CREATE UNIQUE INDEX IF NOT EXISTS IX_WarehouseStocks_Tenant_Warehouse_Product ON WarehouseStocks (TenantId, WarehouseId, ProductId);
+                    CREATE INDEX IF NOT EXISTS IX_WarehouseStocks_TenantId ON WarehouseStocks (TenantId);
+                ");
+            }
+            catch
+            {
+                // Tables/indices already exist
+            }
+
+
             if (await context.Tenants.AnyAsync())
             {
                 var updated = false;
@@ -181,8 +221,12 @@ public static class DbSeeder
                     UPDATE InventoryItems SET Barcode = '8901234000033' WHERE Id = 'item_forge_3' AND (Barcode IS NULL OR Barcode = '');
                 ");
 
+                // Ensure Warehouses and WarehouseStocks are seeded for existing data
+                await SeedWarehousesAndStocksAsync(context);
+
                 return; // Already seeded
             }
+
 
             var defaultPasswordHash = PasswordHasher.Hash(DefaultDemoPassword);
 
@@ -796,10 +840,219 @@ public static class DbSeeder
         context.InventoryTransactions.AddRange(transactions);
 
         await context.SaveChangesAsync();
+
+        // 10. Seed Warehouses & Warehouse Stocks
+        await SeedWarehousesAndStocksAsync(context);
         }
         finally
         {
             _semaphore.Release();
         }
     }
+
+    private static async Task SeedWarehousesAndStocksAsync(AppDbContext context)
+    {
+        // 1. Seed default warehouses if missing
+        var existingWarehouses = await context.Warehouses.IgnoreQueryFilters().ToListAsync();
+
+        var defaultWarehouses = new List<Warehouse>
+        {
+            // Acme Retail Facilities
+            new()
+            {
+                Id = "wh_acme_1",
+                TenantId = "acme-retail",
+                Name = "Hyderabad Central Depot",
+                Code = "WH-HYD-01",
+                Address = "HITEC City Phase 2",
+                City = "Hyderabad",
+                State = "Telangana",
+                IsActive = true,
+                IsDefault = true,
+                CreatedAt = DateTime.UtcNow.AddMonths(-3),
+                UpdatedAt = DateTime.UtcNow.AddMonths(-3)
+            },
+            new()
+            {
+                Id = "wh_acme_2",
+                TenantId = "acme-retail",
+                Name = "Bengaluru Regional Hub",
+                Code = "WH-BLR-01",
+                Address = "Whitefield Logistics Zone",
+                City = "Bengaluru",
+                State = "Karnataka",
+                IsActive = true,
+                IsDefault = false,
+                CreatedAt = DateTime.UtcNow.AddMonths(-2),
+                UpdatedAt = DateTime.UtcNow.AddMonths(-2)
+            },
+            new()
+            {
+                Id = "wh_acme_3",
+                TenantId = "acme-retail",
+                Name = "Vijayawada Express Center",
+                Code = "WH-BZA-01",
+                Address = "Autonagar Logistics Park",
+                City = "Vijayawada",
+                State = "Andhra Pradesh",
+                IsActive = true,
+                IsDefault = false,
+                CreatedAt = DateTime.UtcNow.AddMonths(-1),
+                UpdatedAt = DateTime.UtcNow.AddMonths(-1)
+            },
+
+            // Nova Electronics Facilities
+            new()
+            {
+                Id = "wh_nova_1",
+                TenantId = "nova-electronics",
+                Name = "Hyderabad Tech Hub",
+                Code = "WH-HYD-02",
+                Address = "Gachibowli Tech Corridor",
+                City = "Hyderabad",
+                State = "Telangana",
+                IsActive = true,
+                IsDefault = true,
+                CreatedAt = DateTime.UtcNow.AddMonths(-2),
+                UpdatedAt = DateTime.UtcNow.AddMonths(-2)
+            },
+            new()
+            {
+                Id = "wh_nova_2",
+                TenantId = "nova-electronics",
+                Name = "Chennai Component Depot",
+                Code = "WH-MAA-01",
+                Address = "Ambattur Industrial Estate",
+                City = "Chennai",
+                State = "Tamil Nadu",
+                IsActive = true,
+                IsDefault = false,
+                CreatedAt = DateTime.UtcNow.AddMonths(-1),
+                UpdatedAt = DateTime.UtcNow.AddMonths(-1)
+            },
+
+            // Zenith Supplies Facilities
+            new()
+            {
+                Id = "wh_zenith_1",
+                TenantId = "zenith-supplies",
+                Name = "Mumbai Corporate Logistics",
+                Code = "WH-BOM-01",
+                Address = "Bandra-Kurla Complex",
+                City = "Mumbai",
+                State = "Maharashtra",
+                IsActive = true,
+                IsDefault = true,
+                CreatedAt = DateTime.UtcNow.AddMonths(-1),
+                UpdatedAt = DateTime.UtcNow.AddMonths(-1)
+            },
+            new()
+            {
+                Id = "wh_zenith_2",
+                TenantId = "zenith-supplies",
+                Name = "Pune Distribution Center",
+                Code = "WH-PNQ-01",
+                Address = "Hinjawadi Phase 2",
+                City = "Pune",
+                State = "Maharashtra",
+                IsActive = true,
+                IsDefault = false,
+                CreatedAt = DateTime.UtcNow.AddMonths(-1),
+                UpdatedAt = DateTime.UtcNow.AddMonths(-1)
+            },
+
+            // Forge Industrial Facility
+            new()
+            {
+                Id = "wh_forge_1",
+                TenantId = "forge",
+                Name = "Forge Industrial Hub",
+                Code = "WH-FRG-01",
+                Address = "Sanath Nagar Heavy Industrial Area",
+                City = "Hyderabad",
+                State = "Telangana",
+                IsActive = true,
+                IsDefault = true,
+                CreatedAt = DateTime.UtcNow.AddMonths(-1),
+                UpdatedAt = DateTime.UtcNow.AddMonths(-1)
+            }
+        };
+
+        var addedWarehouses = false;
+        foreach (var wh in defaultWarehouses)
+        {
+            if (!existingWarehouses.Any(w => w.TenantId == wh.TenantId && w.Code == wh.Code))
+            {
+                context.Warehouses.Add(wh);
+                addedWarehouses = true;
+            }
+        }
+
+        // Also ensure any other tenant in the database has at least a default warehouse
+        var allTenants = await context.Tenants.IgnoreQueryFilters().ToListAsync();
+        foreach (var tenant in allTenants)
+        {
+            if (!existingWarehouses.Any(w => w.TenantId == tenant.Id) && !defaultWarehouses.Any(w => w.TenantId == tenant.Id))
+            {
+                var customWh = new Warehouse
+                {
+                    Id = $"wh_{tenant.Id}_main",
+                    TenantId = tenant.Id,
+                    Name = $"{tenant.Name} Central Facility",
+                    Code = "WH-MAIN",
+                    Address = "Primary Logistics Hub",
+                    City = "Hyderabad",
+                    State = "Telangana",
+                    IsActive = true,
+                    IsDefault = true,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                context.Warehouses.Add(customWh);
+                addedWarehouses = true;
+            }
+        }
+
+        if (addedWarehouses)
+        {
+            await context.SaveChangesAsync();
+        }
+
+        // 2. Ensure all existing InventoryItems have WarehouseStock rows
+        var allItems = await context.InventoryItems.IgnoreQueryFilters().ToListAsync();
+        var currentWarehouses = await context.Warehouses.IgnoreQueryFilters().ToListAsync();
+        var existingStocks = await context.WarehouseStocks.IgnoreQueryFilters().ToListAsync();
+
+        var addedStocks = false;
+        foreach (var item in allItems)
+        {
+            var itemStocks = existingStocks.Where(ws => ws.ProductId == item.Id).ToList();
+            if (!itemStocks.Any())
+            {
+                // Find tenant default warehouse
+                var defaultWh = currentWarehouses.FirstOrDefault(w => w.TenantId == item.TenantId && w.IsDefault && w.IsActive)
+                             ?? currentWarehouses.FirstOrDefault(w => w.TenantId == item.TenantId && w.IsActive);
+
+                if (defaultWh != null)
+                {
+                    context.WarehouseStocks.Add(new WarehouseStock
+                    {
+                        Id = Guid.NewGuid().ToString(),
+                        TenantId = item.TenantId,
+                        WarehouseId = defaultWh.Id,
+                        ProductId = item.Id,
+                        Quantity = item.Quantity,
+                        UpdatedAt = item.UpdatedAt
+                    });
+                    addedStocks = true;
+                }
+            }
+        }
+
+        if (addedStocks)
+        {
+            await context.SaveChangesAsync();
+        }
+    }
 }
+

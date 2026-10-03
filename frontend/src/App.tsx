@@ -4,12 +4,14 @@ import { Sidebar } from './components/Sidebar';
 import type { TabType } from './components/Sidebar';
 import { DashboardView } from './components/DashboardView';
 import { InventoryView } from './components/InventoryView';
+import { WarehousesView } from './components/WarehousesView';
 import { FilesView } from './components/FilesView';
 import { AuditLogsView } from './components/AuditLogsView';
 import { TenantIsolationDemoView } from './components/TenantIsolationDemoView';
 import { ArchitectureView } from './components/ArchitectureView';
 import { ProductModal } from './components/ProductModal';
 import { StockAdjustModal } from './components/StockAdjustModal';
+import { StockTransferModal } from './components/StockTransferModal';
 import { LoginPage } from './components/LoginPage';
 import { PlatformTenantsView } from './components/PlatformTenantsView';
 import { AcceptInvitationPage } from './components/AcceptInvitationPage';
@@ -20,6 +22,7 @@ import type {
   User, 
   LoginResponse,
   InventoryItem, 
+  Warehouse,
   DashboardStats, 
   InventoryTransaction, 
   TenantFile, 
@@ -35,6 +38,7 @@ import {
   authApi, 
   tenantsApi, 
   inventoryApi, 
+  warehousesApi,
   filesApi, 
   auditApi, 
   setApiTenantId, 
@@ -66,6 +70,7 @@ export const App: React.FC = () => {
 
   // Tenant-Scoped Data
   const [items, setItems] = useState<InventoryItem[]>([]);
+  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [transactions, setTransactions] = useState<InventoryTransaction[]>([]);
   const [files, setFiles] = useState<TenantFile[]>([]);
@@ -104,6 +109,9 @@ export const App: React.FC = () => {
   const [initialBarcodeForNewProduct, setInitialBarcodeForNewProduct] = useState<string>('');
   const [isStockModalOpen, setIsStockModalOpen] = useState(false);
   const [stockItem, setStockItem] = useState<InventoryItem | null>(null);
+  const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
+  const [transferInitialWarehouseId, setTransferInitialWarehouseId] = useState<string | undefined>();
+  const [transferInitialProductId, setTransferInitialProductId] = useState<string | undefined>();
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [isBarcodeScannerOpen, setIsBarcodeScannerOpen] = useState(false);
 
@@ -133,12 +141,13 @@ export const App: React.FC = () => {
     try {
       setApiTenantId(activeId);
 
-      const [itemsRes, statsRes, txRes, filesRes, auditRes] = await Promise.all([
+      const [itemsRes, statsRes, txRes, filesRes, auditRes, warehousesRes] = await Promise.all([
         inventoryApi.getAll(),
         inventoryApi.getStats(),
         inventoryApi.getTransactions(),
         filesApi.getAll(),
         auditApi.getAll(),
+        warehousesApi.getAll().catch(() => []),
       ]);
 
       setItems(itemsRes);
@@ -146,6 +155,7 @@ export const App: React.FC = () => {
       setTransactions(txRes);
       setFiles(filesRes);
       setAuditLogs(auditRes);
+      setWarehouses(warehousesRes);
     } catch (err: any) {
       const status = err.response?.status;
       const errorMsg = err.response?.data?.message || err.message || 'Failed to fetch tenant data';
@@ -256,8 +266,9 @@ export const App: React.FC = () => {
         }
       }
 
-      // Live update dashboard stats
+      // Live update dashboard stats and warehouses
       inventoryApi.getStats().then((s) => setStats(s)).catch(() => {});
+      warehousesApi.getAll().then((w) => setWarehouses(w)).catch(() => {});
     });
 
     const unsubTx = realtimeService.onTransaction((tx: InventoryTransaction) => {
@@ -329,6 +340,7 @@ export const App: React.FC = () => {
     setAuthToken('');
     setCurrentTenant(null);
     setItems([]);
+    setWarehouses([]);
     setFiles([]);
     setAuditLogs([]);
     setTransactions([]);
@@ -351,12 +363,13 @@ export const App: React.FC = () => {
 
     try {
       setLoading(true);
-      const [itemsRes, statsRes, txRes, filesRes, auditRes] = await Promise.all([
+      const [itemsRes, statsRes, txRes, filesRes, auditRes, warehousesRes] = await Promise.all([
         inventoryApi.getAll(),
         inventoryApi.getStats(),
         inventoryApi.getTransactions(),
         filesApi.getAll(),
         auditApi.getAll(),
+        warehousesApi.getAll().catch(() => []),
       ]);
 
       setCurrentTenant(targetTenant);
@@ -365,6 +378,7 @@ export const App: React.FC = () => {
       setTransactions(txRes);
       setFiles(filesRes);
       setAuditLogs(auditRes);
+      setWarehouses(warehousesRes);
 
       // Switch SignalR room
       await realtimeService.switchTenant(targetTenant.id);
@@ -424,10 +438,16 @@ export const App: React.FC = () => {
     }
   };
 
-  // 8. Stock Level Adjustments
+  // 8. Stock Level Adjustments & Transfers
   const handleOpenStockModal = (item: InventoryItem) => {
     setStockItem(item);
     setIsStockModalOpen(true);
+  };
+
+  const handleOpenTransferModal = (warehouseId?: string, productId?: string) => {
+    setTransferInitialWarehouseId(warehouseId);
+    setTransferInitialProductId(productId);
+    setIsTransferModalOpen(true);
   };
 
   const handleAdjustStock = async (id: string, dto: UpdateStockDto) => {
@@ -559,14 +579,25 @@ export const App: React.FC = () => {
               items={items}
               currentTenant={currentTenant}
               loading={loading}
+              warehouses={warehouses}
               onRefresh={() => fetchTenantData()}
               onOpenAddModal={handleOpenAddModal}
               onOpenEditModal={handleOpenEditModal}
               onOpenStockModal={handleOpenStockModal}
               onDeleteItem={handleDeleteItem}
               onOpenBarcodeScanner={() => setIsBarcodeScannerOpen(true)}
+              onOpenTransferModal={handleOpenTransferModal}
               initialCategory={inventoryCategoryFilter}
               initialStatus={inventoryStatusFilter}
+            />
+          )}
+
+          {currentTab === 'warehouses' && (
+            <WarehousesView
+              currentUser={currentUser}
+              currentTenant={currentTenant}
+              items={items}
+              onRefreshData={() => fetchTenantData()}
             />
           )}
 
@@ -613,6 +644,7 @@ export const App: React.FC = () => {
         onSave={handleSaveProduct}
         editingItem={editingItem}
         currentTenant={currentTenant}
+        warehouses={warehouses}
         initialBarcode={initialBarcodeForNewProduct}
       />
 
@@ -622,6 +654,19 @@ export const App: React.FC = () => {
         item={stockItem}
         onAdjust={handleAdjustStock}
         currentTenant={currentTenant}
+      />
+
+      <StockTransferModal
+        isOpen={isTransferModalOpen}
+        onClose={() => setIsTransferModalOpen(false)}
+        warehouses={warehouses}
+        items={items}
+        initialProductId={transferInitialProductId}
+        initialSourceWarehouseId={transferInitialWarehouseId}
+        onTransferSuccess={() => {
+          showToast('Inter-warehouse stock transfer completed successfully', 'success');
+          fetchTenantData();
+        }}
       />
 
       <CommandPaletteModal
@@ -634,6 +679,7 @@ export const App: React.FC = () => {
         onNavigateWithFilter={handleNavigateToInventoryWithFilter}
         onOpenAddProduct={handleOpenAddModal}
         onOpenBarcodeScanner={() => setIsBarcodeScannerOpen(true)}
+        onOpenTransferModal={() => handleOpenTransferModal()}
         onSelectTenant={handleSelectTenant}
         onRefreshData={() => fetchTenantData()}
         onLogout={handleLogout}
@@ -655,6 +701,7 @@ export const App: React.FC = () => {
         onStockUpdated={() => {
           fetchTenantData();
         }}
+        onOpenTransferModal={handleOpenTransferModal}
       />
 
       {/* Floating Toast Notification */}

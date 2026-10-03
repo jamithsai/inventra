@@ -16,7 +16,9 @@ import {
   RefreshCw, 
   Sparkles,
   ArrowRight,
-  ShieldAlert
+  ShieldAlert,
+  Building2,
+  ArrowRightLeft
 } from 'lucide-react';
 import type { InventoryItem, Tenant, UpdateStockDto } from '../types';
 import { inventoryApi } from '../services/api';
@@ -30,6 +32,7 @@ interface BarcodeScannerModalProps {
   onEditProduct: (item: InventoryItem) => void;
   onAddNewProductWithBarcode: (barcode: string) => void;
   onStockUpdated: () => void;
+  onOpenTransferModal?: (warehouseId?: string, productId?: string) => void;
 }
 
 export const BarcodeScannerModal: React.FC<BarcodeScannerModalProps> = ({
@@ -40,9 +43,11 @@ export const BarcodeScannerModal: React.FC<BarcodeScannerModalProps> = ({
   onEditProduct,
   onAddNewProductWithBarcode,
   onStockUpdated,
+  onOpenTransferModal,
 }) => {
   // Mode: 'camera' | 'manual'
   const [activeMode, setActiveMode] = useState<'camera' | 'manual'>('camera');
+
   const [manualBarcode, setManualBarcode] = useState('');
   
   // Camera & Detection States
@@ -59,11 +64,13 @@ export const BarcodeScannerModal: React.FC<BarcodeScannerModalProps> = ({
   const [lookupError, setLookupError] = useState<string | null>(null);
 
   // Quick Stock Adjustment state
+  const [selectedWarehouseId, setSelectedWarehouseId] = useState<string>('');
   const [quickStockAmount, setQuickStockAmount] = useState<number>(10);
   const [quickStockType, setQuickStockType] = useState<'IN' | 'OUT'>('IN');
   const [quickStockNote, setQuickStockNote] = useState<string>('Barcode quick restock');
   const [isAdjustingStock, setIsAdjustingStock] = useState(false);
   const [stockAdjustSuccess, setStockAdjustSuccess] = useState<string | null>(null);
+
 
   // Stop camera media tracks cleanly
   const stopCamera = () => {
@@ -188,6 +195,10 @@ export const BarcodeScannerModal: React.FC<BarcodeScannerModalProps> = ({
     try {
       const item = await inventoryApi.getByBarcode(code);
       setFoundItem(item);
+      if (item.warehouseStocks && item.warehouseStocks.length > 0) {
+        const defaultWs = item.warehouseStocks.find((ws) => ws.isDefault && ws.isActive) || item.warehouseStocks[0];
+        setSelectedWarehouseId(defaultWs.warehouseId);
+      }
     } catch (err: any) {
       setFoundItem(null);
       if (err.response?.status === 404) {
@@ -214,6 +225,7 @@ export const BarcodeScannerModal: React.FC<BarcodeScannerModalProps> = ({
     setLookupError(null);
     setStockAdjustSuccess(null);
     setManualBarcode('');
+    setSelectedWarehouseId('');
     if (activeMode === 'camera') {
       startCamera();
     }
@@ -230,6 +242,7 @@ export const BarcodeScannerModal: React.FC<BarcodeScannerModalProps> = ({
         type: quickStockType,
         quantityChange: Number(quickStockAmount),
         note: quickStockNote || 'Barcode scanner quick adjust',
+        warehouseId: selectedWarehouseId || undefined,
       });
 
       setFoundItem(updated);
@@ -241,6 +254,7 @@ export const BarcodeScannerModal: React.FC<BarcodeScannerModalProps> = ({
       setIsAdjustingStock(false);
     }
   };
+
 
   // Tenant test presets for immediate warehouse testing
   const tenantPresets = [
@@ -407,6 +421,48 @@ export const BarcodeScannerModal: React.FC<BarcodeScannerModalProps> = ({
                     </div>
                   </div>
                 </div>
+
+                {/* Multi-Warehouse Distribution */}
+                {foundItem.warehouseStocks && foundItem.warehouseStocks.length > 0 && (
+                  <div className="p-3 bg-[#FAF9F5] border border-[#E5E1D8] rounded-[8px] space-y-2 mt-2">
+                    <div className="flex items-center justify-between text-[11px] font-semibold text-[#172033]">
+                      <span className="flex items-center space-x-1.5">
+                        <Building2 className="w-3.5 h-3.5 text-[#3157D5]" />
+                        <span>Facility Distribution ({foundItem.warehouseStocks.length} Hubs)</span>
+                      </span>
+                      <span className="text-[#626D82] font-mono font-normal">
+                        {foundItem.warehouseStocks.filter((ws) => ws.quantity > 0).length} stocked
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {foundItem.warehouseStocks.map((ws) => (
+                        <div
+                          key={ws.warehouseId}
+                          className={`p-2 rounded-[6px] border text-xs transition ${
+                            selectedWarehouseId === ws.warehouseId
+                              ? 'bg-[#E9EEFF] border-[#3157D5] text-[#172033]'
+                              : 'bg-white border-[#EEEAE3] text-[#4D576B]'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-mono font-bold text-[#3157D5] text-[10px]">{ws.warehouseCode}</span>
+                            {ws.isDefault && (
+                              <span className="text-[8px] font-bold text-purple-700 bg-purple-50 px-1 rounded">Default</span>
+                            )}
+                          </div>
+                          <div className="text-[10px] font-medium truncate mt-0.5" title={ws.warehouseName}>
+                            {ws.warehouseName}
+                          </div>
+                          <div className="flex items-baseline justify-between mt-1 pt-1 border-t border-[#EEEAE3]/60">
+                            <span className="text-[9px] text-[#626D82]">Stock:</span>
+                            <span className="font-mono font-bold text-[#172033]">{ws.quantity}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Quick Stock Adjustment Section */}
@@ -414,7 +470,7 @@ export const BarcodeScannerModal: React.FC<BarcodeScannerModalProps> = ({
                 <div className="flex items-center justify-between">
                   <h5 className="font-bold text-xs text-[#172033] flex items-center space-x-1.5">
                     <SlidersHorizontal className="w-3.5 h-3.5 text-[#3157D5]" />
-                    <span>Quick Warehouse Stock Adjust</span>
+                    <span>Quick Facility Stock Adjust</span>
                   </h5>
                   {stockAdjustSuccess && (
                     <span className="text-[11px] font-mono text-[#027A48] font-semibold">
@@ -422,6 +478,24 @@ export const BarcodeScannerModal: React.FC<BarcodeScannerModalProps> = ({
                     </span>
                   )}
                 </div>
+
+                {/* Target Warehouse Selector for Adjustment */}
+                {foundItem.warehouseStocks && foundItem.warehouseStocks.length > 1 && (
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-medium text-[#626D82] block">Target Facility:</label>
+                    <select
+                      value={selectedWarehouseId}
+                      onChange={(e) => setSelectedWarehouseId(e.target.value)}
+                      className="w-full px-2.5 py-1.5 bg-[#FAF9F5] border border-[#DDD8CE] rounded-[6px] text-xs text-[#172033] focus:outline-none focus:border-[#3157D5]"
+                    >
+                      {foundItem.warehouseStocks.map((ws) => (
+                        <option key={ws.warehouseId} value={ws.warehouseId}>
+                          {ws.warehouseCode} — {ws.warehouseName} ({ws.quantity} units currently)
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-2 gap-2">
                   <button
@@ -494,18 +568,32 @@ export const BarcodeScannerModal: React.FC<BarcodeScannerModalProps> = ({
               </div>
 
               {/* Action Buttons */}
-              <div className="grid grid-cols-2 gap-2 pt-1">
+              <div className="grid grid-cols-3 gap-2 pt-1">
                 <button
                   type="button"
                   onClick={() => {
                     onClose();
                     onViewProductInInventory(foundItem);
                   }}
-                  className="px-3 py-2 rounded-[7px] bg-[#FBFAF7] border border-[#E5E1D8] hover:bg-[#EEEAE3] text-[#172033] text-xs font-semibold transition flex items-center justify-center space-x-1.5"
+                  className="px-2.5 py-2 rounded-[7px] bg-[#FBFAF7] border border-[#E5E1D8] hover:bg-[#EEEAE3] text-[#172033] text-xs font-semibold transition flex items-center justify-center space-x-1"
                 >
                   <Package className="w-3.5 h-3.5 text-[#3157D5]" />
-                  <span>View in Inventory</span>
+                  <span>View Catalog</span>
                 </button>
+
+                {onOpenTransferModal && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClose();
+                      onOpenTransferModal(selectedWarehouseId || undefined, foundItem.id);
+                    }}
+                    className="px-2.5 py-2 rounded-[7px] bg-[#E9EEFF] border border-[#D5E0FF] hover:bg-[#D5E0FF] text-[#3157D5] text-xs font-semibold transition flex items-center justify-center space-x-1"
+                  >
+                    <ArrowRightLeft className="w-3.5 h-3.5 text-[#3157D5]" />
+                    <span>Transfer Stock</span>
+                  </button>
+                )}
 
                 <button
                   type="button"
@@ -513,14 +601,15 @@ export const BarcodeScannerModal: React.FC<BarcodeScannerModalProps> = ({
                     onClose();
                     onEditProduct(foundItem);
                   }}
-                  className="px-3 py-2 rounded-[7px] bg-[#FBFAF7] border border-[#E5E1D8] hover:bg-[#EEEAE3] text-[#172033] text-xs font-semibold transition flex items-center justify-center space-x-1.5"
+                  className="px-2.5 py-2 rounded-[7px] bg-[#FBFAF7] border border-[#E5E1D8] hover:bg-[#EEEAE3] text-[#172033] text-xs font-semibold transition flex items-center justify-center space-x-1"
                 >
                   <Edit3 className="w-3.5 h-3.5 text-[#344054]" />
-                  <span>Edit Full Details</span>
+                  <span>Edit Product</span>
                 </button>
               </div>
             </div>
           )}
+
 
           {/* STATE 3: Barcode Not Found or Lookup Error */}
           {!isLookingUp && lookupError && (

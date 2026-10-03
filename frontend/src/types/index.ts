@@ -33,6 +33,18 @@ export interface LoginResponse {
   authorizedTenants: Tenant[];
 }
 
+export interface ProductWarehouseStock {
+  warehouseId: string;
+  warehouseName: string;
+  warehouseCode: string;
+  city?: string;
+  state?: string;
+  isActive: boolean;
+  isDefault: boolean;
+  quantity: number;
+  updatedAt: string;
+}
+
 export interface InventoryItem {
   id: string;
   tenantId: string;
@@ -47,6 +59,7 @@ export interface InventoryItem {
   createdAt: string;
   updatedAt: string;
   status: 'IN_STOCK' | 'LOW_STOCK' | 'OUT_OF_STOCK';
+  warehouseStocks?: ProductWarehouseStock[];
 }
 
 export interface CreateInventoryItemDto {
@@ -58,6 +71,7 @@ export interface CreateInventoryItemDto {
   lowStockThreshold: number;
   barcode?: string;
   imageUrl?: string;
+  warehouseId?: string;
 }
 
 export interface UpdateInventoryItemDto {
@@ -75,7 +89,81 @@ export interface UpdateStockDto {
   quantityChange: number; // e.g., +10 or -5
   type: 'IN' | 'OUT' | 'ADJUSTMENT';
   note?: string;
+  warehouseId?: string;
 }
+
+export interface Warehouse {
+  id: string;
+  tenantId: string;
+  name: string;
+  code: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  isActive: boolean;
+  isDefault: boolean;
+  totalProducts: number;
+  totalStockUnits: number;
+  totalValuation: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WarehouseStockItem {
+  id: string;
+  warehouseId: string;
+  productId: string;
+  productName: string;
+  sku: string;
+  barcode?: string;
+  category: string;
+  price: number;
+  quantity: number;
+  lowStockThreshold: number;
+  status: 'IN_STOCK' | 'LOW_STOCK' | 'OUT_OF_STOCK';
+  imageUrl?: string;
+  updatedAt: string;
+}
+
+export interface WarehouseDetail extends Warehouse {
+  stocks: WarehouseStockItem[];
+}
+
+export interface CreateWarehouseRequest {
+  name: string;
+  code: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  isDefault?: boolean;
+}
+
+export interface UpdateWarehouseRequest {
+  name?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  isActive?: boolean;
+  isDefault?: boolean;
+}
+
+export interface StockTransferRequest {
+  sourceWarehouseId: string;
+  destinationWarehouseId: string;
+  productId: string;
+  quantity: number;
+  note?: string;
+}
+
+export interface StockTransferResult {
+  success: boolean;
+  transactionId: string;
+  message: string;
+  sourceRemainingQuantity: number;
+  destinationNewQuantity: number;
+  aggregateProductQuantity: number;
+}
+
 
 export interface InventoryTransaction {
   id: string;

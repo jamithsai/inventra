@@ -10,6 +10,7 @@ public class CreateInventoryItemDto
     public int LowStockThreshold { get; set; } = 5;
     public string? Barcode { get; set; }
     public string? ImageUrl { get; set; }
+    public string? WarehouseId { get; set; }
 }
 
 public class UpdateInventoryItemDto
@@ -29,7 +30,9 @@ public class UpdateStockDto
     public int QuantityChange { get; set; }
     public string Type { get; set; } = "IN"; // "IN", "OUT", "ADJUSTMENT"
     public string? Note { get; set; }
+    public string? WarehouseId { get; set; }
 }
+
 
 public class InventoryStatsDto
 {

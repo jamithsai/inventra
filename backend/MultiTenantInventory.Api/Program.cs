@@ -145,7 +145,9 @@ builder.Services.AddScoped<IFileStorageService, S3FileStorageService>();
 
 // 7. Register Business Services
 builder.Services.AddScoped<IInventoryService, InventoryService>();
+builder.Services.AddScoped<IWarehouseService, WarehouseService>();
 builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
+
 
 // 8. CORS Configuration with WebSockets / SignalR Credentials support
 builder.Services.AddCors(options =>

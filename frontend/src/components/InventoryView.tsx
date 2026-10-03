@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Search, 
   Filter, 
@@ -9,21 +9,25 @@ import {
   Package, 
   RefreshCw, 
   ArrowUpDown,
-  ScanBarcode
+  ScanBarcode,
+  Building2,
+  ArrowRightLeft
 } from 'lucide-react';
-import type { InventoryItem, Tenant } from '../types';
+import type { InventoryItem, Tenant, Warehouse } from '../types';
 import { formatINR } from '../utils/currency';
 
 interface InventoryViewProps {
   items: InventoryItem[];
   currentTenant: Tenant | null;
   loading: boolean;
+  warehouses?: Warehouse[];
   onRefresh: () => void;
   onOpenAddModal: () => void;
   onOpenEditModal: (item: InventoryItem) => void;
   onOpenStockModal: (item: InventoryItem) => void;
   onDeleteItem: (id: string, name: string) => void;
   onOpenBarcodeScanner?: () => void;
+  onOpenTransferModal?: (warehouseId?: string, productId?: string) => void;
   initialCategory?: string;
   initialStatus?: string;
 }
@@ -32,20 +36,24 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
   items,
   currentTenant,
   loading,
+  warehouses = [],
   onRefresh,
   onOpenAddModal,
   onOpenEditModal,
   onOpenStockModal,
   onDeleteItem,
   onOpenBarcodeScanner,
+  onOpenTransferModal,
   initialCategory = 'ALL',
   initialStatus = 'ALL',
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState(initialCategory);
   const [statusFilter, setStatusFilter] = useState(initialStatus);
+  const [warehouseFilter, setWarehouseFilter] = useState('ALL');
   const [sortBy, setSortBy] = useState<'name' | 'quantity' | 'price' | 'updatedAt'>('updatedAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
 
   React.useEffect(() => {
     if (initialCategory) setCategoryFilter(initialCategory);
@@ -177,6 +185,25 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
           </select>
         </div>
 
+        {/* Facility / Warehouse Filter */}
+        {warehouses.length > 0 && (
+          <div className="flex items-center space-x-2 w-full md:w-auto">
+            <Building2 className="w-3.5 h-3.5 text-[#98A2B3] shrink-0" />
+            <select
+              value={warehouseFilter}
+              onChange={(e) => setWarehouseFilter(e.target.value)}
+              className="px-2.5 py-1.5 rounded-[7px] bg-[#FBFAF7] border border-[#E5E1D8] text-xs text-[#172033] focus:outline-none focus:border-[#3157D5] focus:bg-white"
+            >
+              <option value="ALL">All Facilities (Consolidated)</option>
+              {warehouses.map((w) => (
+                <option key={w.id} value={w.id}>
+                  {w.code} — {w.name} {w.isDefault ? '(Default)' : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         {/* Status Filter */}
         <div className="w-full md:w-auto">
           <select
@@ -208,7 +235,11 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                 <th className="px-4 py-3 font-medium">Category</th>
                 <th className="px-4 py-3 font-medium">
                   <button onClick={() => handleSort('quantity')} className="flex items-center space-x-1 hover:text-[#172033]">
-                    <span>Stock Level</span>
+                    <span>
+                      {warehouseFilter !== 'ALL'
+                        ? `Facility Stock (${warehouses.find((w) => w.id === warehouseFilter)?.code || 'WH'})`
+                        : 'Total Stock Level'}
+                    </span>
                     <ArrowUpDown className="w-3 h-3 text-[#98A2B3]" />
                   </button>
                 </th>
@@ -225,8 +256,13 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
             </thead>
             <tbody className="divide-y divide-[#EEEAE3]">
               {filteredItems.map((item) => {
-                const isOutOfStock = item.quantity === 0;
-                const isLowStock = !isOutOfStock && item.quantity <= item.lowStockThreshold;
+                const effectiveQuantity =
+                  warehouseFilter !== 'ALL'
+                    ? item.warehouseStocks?.find((ws) => ws.warehouseId === warehouseFilter)?.quantity ?? 0
+                    : item.quantity;
+
+                const isOutOfStock = effectiveQuantity === 0;
+                const isLowStock = !isOutOfStock && effectiveQuantity <= item.lowStockThreshold;
 
                 return (
                   <tr key={item.id} className="hover:bg-[#FBFAF7] transition">
@@ -273,7 +309,12 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                     <td className="px-4 py-3">
                       <div className="space-y-1">
                         <div className="flex items-center space-x-2">
-                          <span className="font-mono font-bold text-[#172033]">{item.quantity}</span>
+                          <span className="font-mono font-bold text-[#172033]">{effectiveQuantity}</span>
+                          {warehouseFilter !== 'ALL' && (
+                            <span className="text-[10px] text-[#3157D5] font-mono">
+                              ({item.quantity} total)
+                            </span>
+                          )}
                           <span className="text-[10px] text-[#98A2B3] font-mono">/ min {item.lowStockThreshold}</span>
                         </div>
                         <div className="w-20 h-1.5 rounded-full bg-[#F7F5F0] overflow-hidden">
@@ -286,7 +327,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                                 : 'bg-[#3157D5]'
                             }`}
                             style={{
-                              width: `${Math.min(100, (item.quantity / Math.max(item.lowStockThreshold * 3, 10)) * 100)}%`,
+                              width: `${Math.min(100, (effectiveQuantity / Math.max(item.lowStockThreshold * 3, 10)) * 100)}%`,
                             }}
                           />
                         </div>
@@ -300,7 +341,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
 
                     {/* Total Value */}
                     <td className="px-4 py-3 font-mono font-bold text-[#172033]">
-                      {formatCurrency(item.quantity * item.price)}
+                      {formatCurrency(effectiveQuantity * item.price)}
                     </td>
 
                     {/* Status Badge */}
@@ -326,6 +367,20 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                     {/* Actions */}
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end space-x-1.5">
+                        {onOpenTransferModal && warehouses.length > 1 && (
+                          <button
+                            onClick={() =>
+                              onOpenTransferModal(
+                                warehouseFilter !== 'ALL' ? warehouseFilter : undefined,
+                                item.id
+                              )
+                            }
+                            title="Transfer Product Stock"
+                            className="p-1 rounded-[6px] bg-white hover:bg-[#FAF9F5] text-[#4D576B] hover:text-[#3157D5] border border-[#E5E1D8] transition"
+                          >
+                            <ArrowRightLeft className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                         <button
                           onClick={() => onOpenStockModal(item)}
                           title="Adjust Stock Level"
@@ -353,6 +408,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({
                   </tr>
                 );
               })}
+
 
               {filteredItems.length === 0 && (
                 <tr>
